@@ -44,6 +44,7 @@ export interface DeckStat {
 export interface ArchetypeStat {
 	readonly id: number;
 	readonly name: string;
+	readonly heroCardClass: string;
 	readonly totalGames: number;
 	readonly winrate: number;
 	readonly coreCards: readonly string[];

@@ -19,6 +19,7 @@ export const buildArchetypes = async (
 		const result: ArchetypeStat = {
 			id: +archetypeId,
 			name: archetype.archetype,
+			heroCardClass: archetypeRows[0]?.playerClass,
 			totalGames: totalGames,
 			coreCards: coreCards,
 			winrate: winrate,
