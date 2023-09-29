@@ -7,6 +7,10 @@ export const round = (input: number, decimals = 2): number => {
 };
 
 export const extractCardsForList = (decklist: string): readonly string[] => {
+	// Legacy decklist truncated because of the database column size
+	if (decklist?.length === 145) {
+		return [];
+	}
 	try {
 		const deck = decode(decklist);
 		return deck.cards
