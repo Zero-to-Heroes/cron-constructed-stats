@@ -1,8 +1,8 @@
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
 import { Archetype } from './archetypes';
 import { CORE_CARD_THRESHOLD } from './build-constructed-deck-stats';
+import { extractCardsForList } from './hs-utils';
 import { ArchetypeStat, ConstructedMatchStatDbRow } from './model';
-import { extractCardsForList } from './utils';
 
 export const buildArchetypes = async (
 	rows: readonly ConstructedMatchStatDbRow[],

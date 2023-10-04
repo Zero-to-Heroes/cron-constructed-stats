@@ -2,6 +2,8 @@ import { S3, groupByFunction } from '@firestone-hs/aws-lambda-utils';
 import serverlessMysql from 'serverless-mysql';
 import { gzipSync } from 'zlib';
 import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX, GAMES_THRESHOLD } from './build-constructed-deck-stats';
+import { buildCardsDataForDeck } from './constructed-card-data';
+import { extractCardsForList } from './hs-utils';
 import {
 	ArchetypeStat,
 	ConstructedMatchStatDbRow,
@@ -11,7 +13,7 @@ import {
 	RankBracket,
 	TimePeriod,
 } from './model';
-import { extractCardsForList, round } from './utils';
+import { round } from './utils';
 
 export const buildDeckStats = (
 	rows: readonly ConstructedMatchStatDbRow[],
@@ -60,12 +62,15 @@ const buildDeckStatsForRankBracket = (
 ): readonly DeckStat[] => {
 	const groupedByDeck = groupByFunction((row: ConstructedMatchStatDbRow) => row.playerDecklist)(rows);
 	const deckStats: readonly DeckStat[] = Object.keys(groupedByDeck)
+		// Legacy decklist truncated because of the database column size
+		.filter((decklist) => decklist?.length !== 145)
 		.map((decklist) => {
 			const deckRows: readonly ConstructedMatchStatDbRow[] = groupedByDeck[decklist];
 			const totalGames: number = deckRows.length;
 			const totalWins: number = deckRows.filter((row) => row.result === 'won').length;
 			const winrate: number = totalWins / totalGames;
 			const archetypeStat = archetypes.find((arch) => arch.id === deckRows[0].playerArchetypeId);
+			const cardsData = buildCardsDataForDeck(deckRows);
 			try {
 				const cardVariations = buildCardVariations(decklist, archetypeStat?.coreCards);
 				const result: DeckStat = {
@@ -80,11 +85,12 @@ const buildDeckStatsForRankBracket = (
 					totalGames: totalGames,
 					winrate: round(winrate),
 					cardVariations: cardVariations,
+					cardsData: cardsData,
 					// archetypeCoreCards: archetypeStat?.coreCards,
 				};
 				return result;
 			} catch (e) {
-				console.error('Could not build card variations for decklist', decklist);
+				console.error('Could not build card variations for decklist', decklist, e);
 				return null;
 			}
 		})

@@ -11,6 +11,7 @@ export interface ConstructedMatchStatDbRow {
 	readonly opponentClass: string;
 	readonly result: 'won' | 'lost' | 'tied';
 	readonly playerDecklist: string;
+	readonly matchAnalysis: string;
 }
 
 export interface DeckStats {
@@ -39,6 +40,17 @@ export interface DeckStat {
 		readonly removed: readonly string[];
 	};
 	readonly archetypeCoreCards?: readonly string[];
+	readonly cardsData: readonly ConstructedCardData[];
+}
+
+export interface ConstructedCardData {
+	cardId: string;
+	inStartingDeck: number;
+	wins: number;
+	keptInMulligan: number;
+	inHandAfterMulligan: number;
+	keptInMulliganThenWin: number;
+	inHandAfterMulliganThenWin: number;
 }
 
 export interface ArchetypeStat {
