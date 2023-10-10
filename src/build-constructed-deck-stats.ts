@@ -14,7 +14,7 @@ import { ConstructedMatchStatDbRow, DeckStat, GameFormat, RankBracket, TimePerio
 export const DECK_STATS_BUCKET = 'static.zerotoheroes.com';
 export const DECK_STATS_KEY_PREFIX = `api/constructed/stats`;
 export const GAMES_THRESHOLD = 50;
-export const CORE_CARD_THRESHOLD = 0.8;
+export const CORE_CARD_THRESHOLD = 0.9;
 
 export const allCards = new AllCardsService();
 const lambda = new AWS.Lambda();
@@ -25,6 +25,7 @@ export default async (event, context: Context): Promise<any> => {
 	const mysql = await getConnectionReadOnly();
 
 	if (!event.format) {
+		// await moveRowsToS3(mysql);
 		await dispatchEvents(context);
 		return;
 	}
@@ -44,6 +45,7 @@ export default async (event, context: Context): Promise<any> => {
 		'diamond',
 		'platinum',
 		'bronze-gold',
+		'all',
 	];
 	for (const timePeriod of allTimePeriod) {
 		for (const rankBracket of allRankBracket) {

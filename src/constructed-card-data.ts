@@ -21,10 +21,12 @@ export const buildCardsDataForDeck = (
 			cardId: card.cardId,
 			inStartingDeck: 0,
 			wins: 0,
+			drawnBeforeMulligan: 0,
 			keptInMulligan: 0,
 			inHandAfterMulligan: 0,
-			keptInMulliganThenWin: 0,
 			inHandAfterMulliganThenWin: 0,
+			drawn: 0,
+			drawnThenWin: 0,
 		});
 	}
 
@@ -38,14 +40,15 @@ export const buildCardsDataForDeck = (
 
 		for (let i = 0; i < deckCards.length; i++) {
 			const consolidatedCardData = consolidatedData[i];
+			const analysis = matchAnalysis.cardsAnalysis[i];
 			consolidatedCardData.inStartingDeck += 1;
 			consolidatedCardData.wins += row.result === 'won' ? 1 : 0;
-			consolidatedCardData.keptInMulligan += matchAnalysis.cardsAnalysis[i].kept ? 1 : 0;
-			consolidatedCardData.inHandAfterMulligan += matchAnalysis.cardsAnalysis[i].mulligan ? 1 : 0;
-			consolidatedCardData.keptInMulliganThenWin +=
-				matchAnalysis.cardsAnalysis[i].kept && row.result === 'won' ? 1 : 0;
-			consolidatedCardData.inHandAfterMulliganThenWin +=
-				matchAnalysis.cardsAnalysis[i].mulligan && row.result === 'won' ? 1 : 0;
+			consolidatedCardData.drawnBeforeMulligan += analysis.drawnBeforeMulligan ? 1 : 0;
+			consolidatedCardData.keptInMulligan += analysis.drawnBeforeMulligan && analysis.mulligan ? 1 : 0;
+			consolidatedCardData.inHandAfterMulligan += analysis.mulligan ? 1 : 0;
+			consolidatedCardData.inHandAfterMulliganThenWin += analysis.mulligan && row.result === 'won' ? 1 : 0;
+			consolidatedCardData.drawn += analysis.drawnTurn > 0 ? 1 : 0;
+			consolidatedCardData.drawnThenWin += analysis.drawnTurn > 0 && row.result === 'won' ? 1 : 0;
 		}
 	}
 

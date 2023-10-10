@@ -1,6 +1,6 @@
 {
 	"name": "@firestone-hs/constructed-deck-stats",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"description": "",
 	"scripts": {
 		"lint": "eslint --color --fix --ext .ts .",
@@ -20,7 +20,7 @@
 		"dist/**/*"
 	],
 	"dependencies": {
-		"@firestone-hs/assign-constructed-archetype": "^0.0.1",
+		"@firestone-hs/assign-constructed-archetype": "^0.0.2",
 		"@firestone-hs/aws-lambda-utils": "^0.0.53",
 		"@firestone-hs/deckstrings": "^2.2.7",
 		"@firestone-hs/hs-replay-xml-parser": "0.0.105",

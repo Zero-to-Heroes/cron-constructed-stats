@@ -47,10 +47,15 @@ export interface ConstructedCardData {
 	cardId: string;
 	inStartingDeck: number;
 	wins: number;
+	// Kept%
+	drawnBeforeMulligan: number;
 	keptInMulligan: number;
+	// Mulligan WR
 	inHandAfterMulligan: number;
-	keptInMulliganThenWin: number;
 	inHandAfterMulliganThenWin: number;
+	// Draw WR
+	drawn: number;
+	drawnThenWin: number;
 }
 
 export interface ArchetypeStat {
@@ -62,6 +67,13 @@ export interface ArchetypeStat {
 	readonly coreCards: readonly string[];
 }
 
-export type RankBracket = 'top-2000-legend' | 'legend' | 'legend-diamond' | 'diamond' | 'platinum' | 'bronze-gold';
+export type RankBracket =
+	| 'top-2000-legend'
+	| 'legend'
+	| 'legend-diamond'
+	| 'diamond'
+	| 'platinum'
+	| 'bronze-gold'
+	| 'all';
 export type TimePeriod = 'past-30' | 'past-7' | 'past-3' | 'current-season' | 'last-patch';
 export type GameFormat = 'standard' | 'wild' | 'twist' | 'classic';

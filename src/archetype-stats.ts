@@ -1,8 +1,15 @@
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
+import { CardClass } from '@firestone-hs/reference-data';
 import { Archetype } from './archetypes';
 import { CORE_CARD_THRESHOLD } from './build-constructed-deck-stats';
 import { extractCardsForList } from './hs-utils';
 import { ArchetypeStat, ConstructedMatchStatDbRow } from './model';
+
+// Build the list of all classes from the CardClass enum
+const allClasses: readonly string[] = Object.keys(CardClass)
+	.map((key) => CardClass[key])
+	.filter((value) => typeof value === 'string')
+	.map((value) => value.toLowerCase());
 
 export const buildArchetypes = async (
 	rows: readonly ConstructedMatchStatDbRow[],
@@ -15,7 +22,7 @@ export const buildArchetypes = async (
 		const totalWins: number = archetypeRows.filter((row) => row.result === 'won').length;
 		const winrate: number = totalWins / totalGames;
 		const archetype = refArchetypes.find((arch) => arch.id === parseInt(archetypeId));
-		const coreCards: readonly string[] = buildCoreCards(archetypeRows);
+		const coreCards: readonly string[] = isOther(archetype.archetype) ? [] : buildCoreCards(archetypeRows);
 		const result: ArchetypeStat = {
 			id: +archetypeId,
 			name: archetype.archetype,
@@ -27,6 +34,10 @@ export const buildArchetypes = async (
 		return result;
 	});
 	return archetypeStats;
+};
+
+const isOther = (archetypeName: string): boolean => {
+	return allClasses.includes(archetypeName?.toLowerCase());
 };
 
 // Build the list of the cards that are present in all of the decks of the archetype

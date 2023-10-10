@@ -51,6 +51,8 @@ export const isCorrectRank = (row: ConstructedMatchStatDbRow, rankBracket: RankB
 			return !row.isLegend && row.playerRank <= 20 && row.playerRank > 10;
 		case 'bronze-gold':
 			return !row.isLegend && row.playerRank > 20;
+		case 'all':
+			return true;
 		default:
 			console.warn('unknown rank bracket', rankBracket);
 			return false;
