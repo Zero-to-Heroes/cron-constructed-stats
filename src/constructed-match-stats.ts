@@ -18,18 +18,18 @@ export const loadRows = async (
 export const isCorrectTime = (row: ConstructedMatchStatDbRow, timePeriod: TimePeriod, patch: PatchInfo): boolean => {
 	switch (timePeriod) {
 		case 'past-30':
-			return row.creationDate >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+			return new Date(row.creationDate) >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 		case 'past-7':
-			return row.creationDate >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+			return new Date(row.creationDate) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 		case 'past-3':
-			return row.creationDate >= new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+			return new Date(row.creationDate) >= new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
 		case 'current-season':
 			// creationDate is after the start of the current month
-			return row.creationDate >= new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+			return new Date(row.creationDate) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 		case 'last-patch':
 			return (
 				row.buildNumber >= patch.number ||
-				row.creationDate.getTime() > new Date(patch.date).getTime() + 24 * 60 * 60 * 1000
+				new Date(row.creationDate).getTime() > new Date(patch.date).getTime() + 24 * 60 * 60 * 1000
 			);
 		default:
 			console.warn('unknown time period', timePeriod);

@@ -14,7 +14,7 @@ Resources:
             Timeout: 880
             CodeUri: ./dist/build-constructed-deck-stats
             MemorySize: 8000
-            ReservedConcurrentExecutions: 2
+            ReservedConcurrentExecutions: 10
             Policies:
                 - AWSLambdaVPCAccessExecutionRole
                 - AmazonSESFullAccess
