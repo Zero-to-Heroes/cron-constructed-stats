@@ -61,10 +61,12 @@ export interface ConstructedCardData {
 export interface ArchetypeStat {
 	readonly id: number;
 	readonly name: string;
+	readonly format: GameFormat;
 	readonly heroCardClass: string;
 	readonly totalGames: number;
 	readonly winrate: number;
 	readonly coreCards: readonly string[];
+	readonly cardsData: readonly ConstructedCardData[];
 }
 
 export type RankBracket =

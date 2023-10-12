@@ -147,7 +147,7 @@ const performRowsProcessing = async (connection: Connection, format: GameFormat)
 };
 
 const processRows = async (rows: readonly ConstructedMatchStatDbRow[], multipartUpload: S3Multipart) => {
-	const validRows = rows;
+	const validRows = rows.filter((r) => r.matchAnalysis?.length > 0);
 	if (validRows.length > 0) {
 		// console.log('\t', 'uploading', validRows.length, 'rows');
 		await multipartUpload.uploadPart(validRows.map((r) => JSON.stringify(r)).join('\n'));

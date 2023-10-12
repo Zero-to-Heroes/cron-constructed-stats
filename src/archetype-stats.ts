@@ -2,8 +2,9 @@ import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
 import { CardClass } from '@firestone-hs/reference-data';
 import { Archetype } from './archetypes';
 import { CORE_CARD_THRESHOLD } from './build-constructed-deck-stats';
+import { buildCardsDataForArchetype } from './constructed-card-data';
 import { extractCardsForList } from './hs-utils';
-import { ArchetypeStat, ConstructedMatchStatDbRow } from './model';
+import { ArchetypeStat, ConstructedCardData, ConstructedMatchStatDbRow, DeckStat, GameFormat } from './model';
 
 // Build the list of all classes from the CardClass enum
 const allClasses: readonly string[] = Object.keys(CardClass)
@@ -11,10 +12,11 @@ const allClasses: readonly string[] = Object.keys(CardClass)
 	.filter((value) => typeof value === 'string')
 	.map((value) => value.toLowerCase());
 
-export const buildArchetypes = async (
+export const buildArchetypes = (
 	rows: readonly ConstructedMatchStatDbRow[],
 	refArchetypes: readonly Archetype[],
-): Promise<readonly ArchetypeStat[]> => {
+	format: GameFormat,
+): readonly ArchetypeStat[] => {
 	const groupedByArchetype = groupByFunction((row: ConstructedMatchStatDbRow) => row.playerArchetypeId)(rows);
 	const archetypeStats: readonly ArchetypeStat[] = Object.keys(groupedByArchetype).map((archetypeId) => {
 		const archetypeRows: readonly ConstructedMatchStatDbRow[] = groupedByArchetype[archetypeId];
@@ -26,18 +28,37 @@ export const buildArchetypes = async (
 		const result: ArchetypeStat = {
 			id: +archetypeId,
 			name: archetype.archetype,
+			format: format,
 			heroCardClass: archetypeRows[0]?.playerClass,
 			totalGames: totalGames,
 			coreCards: coreCards,
 			winrate: winrate,
+			cardsData: [],
 		};
 		return result;
 	});
 	return archetypeStats;
 };
 
+export const enhanceArchetypeStats = (
+	archetypeStats: readonly ArchetypeStat[],
+	deckStats: readonly DeckStat[],
+): readonly ArchetypeStat[] => {
+	return archetypeStats.map((archetype) => {
+		const deckStatsForArchetype: readonly DeckStat[] = deckStats.filter(
+			(deckStat) => deckStat.archetypeId === archetype.id,
+		);
+		const cardsData: readonly ConstructedCardData[] = buildCardsDataForArchetype(deckStatsForArchetype);
+		const result: ArchetypeStat = {
+			...archetype,
+			cardsData: cardsData.filter((d) => d.inStartingDeck > archetype.totalGames / 1000),
+		};
+		return result;
+	});
+};
+
 const isOther = (archetypeName: string): boolean => {
-	return allClasses.includes(archetypeName?.toLowerCase());
+	return allClasses.includes(archetypeName?.toLowerCase().replace('xl', '').replace('-', '').trim());
 };
 
 // Build the list of the cards that are present in all of the decks of the archetype

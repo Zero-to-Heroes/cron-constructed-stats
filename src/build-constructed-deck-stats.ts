@@ -5,7 +5,7 @@ import { S3, getConnectionReadOnly, getLastConstructedPatch, sleep } from '@fire
 import { AllCardsService } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
 import AWS from 'aws-sdk';
-import { buildArchetypes } from './archetype-stats';
+import { buildArchetypes, enhanceArchetypeStats } from './archetype-stats';
 import { loadArchetypes } from './archetypes';
 import { buildDeckStats, saveDeckStats } from './constructed-deck-stats';
 import { isCorrectRank, isCorrectTime } from './constructed-match-stats';
@@ -52,7 +52,7 @@ export default async (event, context: Context): Promise<any> => {
 	const rowsForTime = rows.filter((r) => isCorrectTime(r, timePeriod, patchInfo));
 	const relevantRows = rowsForTime.filter((r) => isCorrectRank(r, rankBracket));
 	console.log('\t', 'relevantRows', relevantRows.length, rankBracket);
-	const archetypeStats = await buildArchetypes(relevantRows, archetypes);
+	const archetypeStats = buildArchetypes(relevantRows, archetypes, format);
 	console.log('\t', 'built archetype stats', archetypeStats.length);
 	const deckStats: readonly DeckStat[] = buildDeckStats(
 		relevantRows,
@@ -61,8 +61,9 @@ export default async (event, context: Context): Promise<any> => {
 		format,
 		archetypeStats,
 	);
+	const enhancedArchetypes = enhanceArchetypeStats(archetypeStats, deckStats);
 	console.log('\t', 'built deck stats', deckStats.length);
-	await saveDeckStats(mysql, deckStats, archetypeStats, rankBracket, timePeriod, format);
+	await saveDeckStats(mysql, deckStats, enhancedArchetypes, rankBracket, timePeriod, format);
 
 	return { statusCode: 200, body: null };
 };
