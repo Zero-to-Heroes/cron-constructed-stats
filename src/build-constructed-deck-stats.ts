@@ -7,9 +7,10 @@ import { Context } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { buildArchetypes, enhanceArchetypeStats } from './archetype-stats';
 import { loadArchetypes } from './archetypes';
-import { buildDeckStats, saveDeckStats } from './constructed-deck-stats';
+import { buildDeckStats } from './constructed-deck-stats';
 import { isCorrectRank, isCorrectTime } from './constructed-match-stats';
 import { ConstructedMatchStatDbRow, DeckStat, GameFormat, RankBracket, TimePeriod } from './model';
+import { saveDeckStats } from './persist-data';
 import { readRowsFromS3, saveRowsOnS3 } from './rows';
 
 export const DECK_STATS_BUCKET = 'static.zerotoheroes.com';

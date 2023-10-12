@@ -1,18 +1,8 @@
-import { S3, groupByFunction } from '@firestone-hs/aws-lambda-utils';
-import serverlessMysql from 'serverless-mysql';
-import { gzipSync } from 'zlib';
-import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX, GAMES_THRESHOLD } from './build-constructed-deck-stats';
+import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
+import { GAMES_THRESHOLD } from './build-constructed-deck-stats';
 import { buildCardsDataForDeck } from './constructed-card-data';
 import { extractCardsForList } from './hs-utils';
-import {
-	ArchetypeStat,
-	ConstructedMatchStatDbRow,
-	DeckStat,
-	DeckStats,
-	GameFormat,
-	RankBracket,
-	TimePeriod,
-} from './model';
+import { ArchetypeStat, ConstructedMatchStatDbRow, DeckStat, GameFormat, RankBracket, TimePeriod } from './model';
 import { round } from './utils';
 
 export const buildDeckStats = (
@@ -23,34 +13,6 @@ export const buildDeckStats = (
 	archetypes: readonly ArchetypeStat[],
 ): readonly DeckStat[] => {
 	return buildDeckStatsForRankBracket(rows, rankBracket, timePeriod, format, archetypes);
-};
-
-export const saveDeckStats = async (
-	mysql: serverlessMysql.ServerlessMysql,
-	deckStats: readonly DeckStat[],
-	archetypeStats: readonly ArchetypeStat[],
-	rankBracket: RankBracket,
-	timePeriod: TimePeriod,
-	format: GameFormat,
-): Promise<void> => {
-	const s3 = new S3();
-	const result: DeckStats = {
-		lastUpdated: new Date(),
-		rankBracket: rankBracket,
-		timePeriod: timePeriod,
-		format: format,
-		dataPoints: deckStats.map((d) => d.totalGames).reduce((a, b) => a + b, 0),
-		deckStats: deckStats,
-		archetypeStats: archetypeStats,
-	};
-	const gzippedResult = gzipSync(JSON.stringify(result));
-	await s3.writeFile(
-		gzippedResult,
-		DECK_STATS_BUCKET,
-		`${DECK_STATS_KEY_PREFIX}/decks/${format}/${timePeriod}/${rankBracket}.gz.json`,
-		'application/json',
-		'gzip',
-	);
 };
 
 const buildDeckStatsForRankBracket = (
@@ -86,7 +48,7 @@ const buildDeckStatsForRankBracket = (
 					winrate: round(winrate),
 					cardVariations: cardVariations,
 					cardsData: cardsData,
-					// archetypeCoreCards: archetypeStat?.coreCards,
+					archetypeCoreCards: archetypeStat?.coreCards,
 				};
 				return result;
 			} catch (e) {

@@ -21,6 +21,15 @@ export interface DeckStats {
 	readonly format: GameFormat;
 	readonly dataPoints: number;
 	readonly deckStats: readonly DeckStat[];
+	// readonly archetypeStats: readonly ArchetypeStat[];
+}
+
+export interface ArchetypeStats {
+	readonly lastUpdated: Date;
+	readonly rankBracket: RankBracket;
+	readonly timePeriod: TimePeriod;
+	readonly format: GameFormat;
+	readonly dataPoints: number;
 	readonly archetypeStats: readonly ArchetypeStat[];
 }
 

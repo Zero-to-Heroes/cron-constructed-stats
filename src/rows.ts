@@ -124,7 +124,11 @@ const performRowsProcessing = async (connection: Connection, format: GameFormat)
 			.on('fields', (fields) => {
 				console.log('fields', fields);
 			})
-			.on('result', async (row) => {
+			.on('result', async (row: ConstructedMatchStatDbRow) => {
+				if (!row?.matchAnalysis?.length) {
+					return;
+				}
+
 				rowsToProcess.push(row);
 				if (rowsToProcess.length > 30000 && !multipartUpload.processing) {
 					connection.pause();
@@ -147,7 +151,7 @@ const performRowsProcessing = async (connection: Connection, format: GameFormat)
 };
 
 const processRows = async (rows: readonly ConstructedMatchStatDbRow[], multipartUpload: S3Multipart) => {
-	const validRows = rows.filter((r) => r.matchAnalysis?.length > 0);
+	const validRows = rows;
 	if (validRows.length > 0) {
 		// console.log('\t', 'uploading', validRows.length, 'rows');
 		await multipartUpload.uploadPart(validRows.map((r) => JSON.stringify(r)).join('\n'));
