@@ -4,12 +4,21 @@ import { Archetype } from './archetypes';
 import { CORE_CARD_THRESHOLD } from './build-constructed-deck-stats';
 import { buildCardsDataForArchetype } from './constructed-card-data';
 import { extractCardsForList } from './hs-utils';
-import { ArchetypeStat, ConstructedCardData, ConstructedMatchStatDbRow, DeckStat, GameFormat } from './model';
+import {
+	ArchetypeStat,
+	ConstructedCardData,
+	ConstructedMatchStatDbRow,
+	ConstructedMatchupInfo,
+	DeckStat,
+	GameFormat,
+} from './model';
+import { round } from './utils';
 
 // Build the list of all classes from the CardClass enum
-const allClasses: readonly string[] = Object.keys(CardClass)
+export const allClasses: readonly string[] = Object.keys(CardClass)
 	.map((key) => CardClass[key])
 	.filter((value) => typeof value === 'string')
+	.filter((value) => ![CardClass.INVALID, CardClass.NEUTRAL, CardClass.DREAM, CardClass.WHIZBANG].includes(value))
 	.map((value) => value.toLowerCase());
 
 export const buildArchetypes = (
@@ -18,25 +27,28 @@ export const buildArchetypes = (
 	format: GameFormat,
 ): readonly ArchetypeStat[] => {
 	const groupedByArchetype = groupByFunction((row: ConstructedMatchStatDbRow) => row.playerArchetypeId)(rows);
-	const archetypeStats: readonly ArchetypeStat[] = Object.keys(groupedByArchetype).map((archetypeId) => {
-		const archetypeRows: readonly ConstructedMatchStatDbRow[] = groupedByArchetype[archetypeId];
-		const totalGames: number = archetypeRows.length;
-		const totalWins: number = archetypeRows.filter((row) => row.result === 'won').length;
-		const winrate: number = totalWins / totalGames;
-		const archetype = refArchetypes.find((arch) => arch.id === parseInt(archetypeId));
-		const coreCards: readonly string[] = isOther(archetype.archetype) ? [] : buildCoreCards(archetypeRows);
-		const result: ArchetypeStat = {
-			id: +archetypeId,
-			name: archetype.archetype,
-			format: format,
-			heroCardClass: archetypeRows[0]?.playerClass,
-			totalGames: totalGames,
-			coreCards: coreCards,
-			winrate: winrate,
-			cardsData: [],
-		};
-		return result;
-	});
+	const archetypeStats: readonly ArchetypeStat[] = Object.keys(groupedByArchetype)
+		.map((archetypeId) => {
+			const archetypeRows: readonly ConstructedMatchStatDbRow[] = groupedByArchetype[archetypeId];
+			const totalGames: number = archetypeRows.length;
+			const totalWins: number = archetypeRows.filter((row) => row.result === 'won').length;
+			const winrate: number = totalWins / totalGames;
+			const archetype = refArchetypes.find((arch) => arch.id === parseInt(archetypeId));
+			const coreCards: readonly string[] = isOther(archetype.archetype) ? [] : buildCoreCards(archetypeRows);
+			const result: ArchetypeStat = {
+				id: +archetypeId,
+				name: archetype.archetype,
+				format: format,
+				heroCardClass: archetypeRows[0]?.playerClass,
+				totalGames: totalGames,
+				coreCards: coreCards,
+				winrate: round(winrate),
+				cardsData: [],
+				matchupInfo: [],
+			};
+			return result;
+		})
+		.filter((stat) => stat.winrate >= 0.3);
 	return archetypeStats;
 };
 
@@ -49,9 +61,11 @@ export const enhanceArchetypeStats = (
 			(deckStat) => deckStat.archetypeId === archetype.id,
 		);
 		const cardsData: readonly ConstructedCardData[] = buildCardsDataForArchetype(deckStatsForArchetype);
+		const matchupInfo: readonly ConstructedMatchupInfo[] = buildMatchupInfoForArchetype(deckStatsForArchetype);
 		const result: ArchetypeStat = {
 			...archetype,
 			cardsData: cardsData.filter((d) => d.inStartingDeck > archetype.totalGames / 1000),
+			matchupInfo: matchupInfo,
 		};
 		return result;
 	});
@@ -86,4 +100,19 @@ const buildCoreCards = (rows: readonly ConstructedMatchStatDbRow[]): readonly st
 	}
 
 	return coreCards;
+};
+
+const buildMatchupInfoForArchetype = (deckStats: readonly DeckStat[]): readonly ConstructedMatchupInfo[] => {
+	return allClasses.map((opponentClass) => {
+		const infoForClass = deckStats
+			.map((d) => d.matchupInfo.find((info) => info.opponentClass === opponentClass))
+			.filter((info) => info);
+		const result: ConstructedMatchupInfo = {
+			opponentClass: opponentClass,
+			totalGames: infoForClass.map((info) => info.totalGames).reduce((a, b) => a + b, 0),
+			wins: infoForClass.map((info) => info.wins).reduce((a, b) => a + b, 0),
+			losses: infoForClass.map((info) => info.losses).reduce((a, b) => a + b, 0),
+		};
+		return result;
+	});
 };

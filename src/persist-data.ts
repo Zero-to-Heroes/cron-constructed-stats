@@ -51,6 +51,7 @@ const saveGlobalDeckStats = async (
 	const minimalDecks: readonly DeckStat[] = deckStats.map((d) => {
 		const result: Mutable<DeckStat> = { ...d };
 		delete result.cardsData;
+		delete result.matchupInfo;
 		return result;
 	});
 	const minResult: DeckStats = {
@@ -81,6 +82,7 @@ const saveGlobalArchetypeStats = async (
 	const minimalArchetypes: readonly ArchetypeStat[] = archetypeStats.map((d) => {
 		const result: Mutable<ArchetypeStat> = { ...d };
 		delete result.cardsData;
+		delete result.matchupInfo;
 		return result;
 	});
 	const minResult: ArchetypeStats = {
@@ -111,7 +113,7 @@ const saveDetailedDeckStats = async (
 	await Promise.all(
 		deckStats.map(async (deck) => {
 			const gzippedResult = gzipSync(JSON.stringify(deck));
-			const deckId = encodeURIComponent(deck.decklist);
+			const deckId = deck.decklist.replace('/', '-');
 			s3.writeFile(
 				gzippedResult,
 				DECK_STATS_BUCKET,

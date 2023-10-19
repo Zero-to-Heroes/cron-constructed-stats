@@ -13,7 +13,7 @@ Resources:
             Runtime: nodejs16.x
             Timeout: 880
             CodeUri: ./dist/build-constructed-deck-stats
-            MemorySize: 8000
+            MemorySize: 10000
             ReservedConcurrentExecutions: 10
             Policies:
                 - AWSLambdaVPCAccessExecutionRole

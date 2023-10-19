@@ -25,3 +25,5 @@ export const arraysEqual = (a: readonly any[] | any, b: readonly any[] | any): b
 		})
 	);
 };
+
+export const formatMemoryUsage = (data) => `${Math.round((data / 1024 / 1024) * 100) / 100} MB`;

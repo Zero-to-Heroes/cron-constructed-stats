@@ -12,6 +12,7 @@ import { isCorrectRank, isCorrectTime } from './constructed-match-stats';
 import { ConstructedMatchStatDbRow, DeckStat, GameFormat, RankBracket, TimePeriod } from './model';
 import { saveDeckStats } from './persist-data';
 import { readRowsFromS3, saveRowsOnS3 } from './rows';
+import { formatMemoryUsage } from './utils';
 
 export const DECK_STATS_BUCKET = 'static.zerotoheroes.com';
 export const DECK_STATS_KEY_PREFIX = `api/constructed/stats`;
@@ -25,7 +26,21 @@ const lambda = new AWS.Lambda();
 
 // [1]: https://aws.amazon.com/blogs/compute/node-js-8-10-runtime-now-available-in-aws-lambda/
 export default async (event, context: Context): Promise<any> => {
+	console.debug(
+		'memory usage',
+		'before cards init',
+		formatMemoryUsage(process.memoryUsage().heapUsed),
+		'/',
+		formatMemoryUsage(process.memoryUsage().heapTotal),
+	);
 	await allCards.initializeCardsDb();
+	console.debug(
+		'memory usage',
+		'after cards init',
+		formatMemoryUsage(process.memoryUsage().heapUsed),
+		'/',
+		formatMemoryUsage(process.memoryUsage().heapTotal),
+	);
 	const mysql = await getConnectionReadOnly();
 
 	if (!event.format) {
@@ -44,17 +59,59 @@ export default async (event, context: Context): Promise<any> => {
 
 	console.log('reading rows from s3', format, timePeriod, rankBracket);
 	const allRows: readonly ConstructedMatchStatDbRow[] = await readRowsFromS3(format);
+	console.debug(
+		'memory usage',
+		'after reading rows',
+		formatMemoryUsage(process.memoryUsage().heapUsed),
+		'/',
+		formatMemoryUsage(process.memoryUsage().heapTotal),
+	);
 	const rows = allRows.filter((r) => r.format === format);
 	console.log('\t', 'loaded rows', rows.length);
+	console.debug(
+		'memory usage',
+		'after filtered rows',
+		formatMemoryUsage(process.memoryUsage().heapUsed),
+		'/',
+		formatMemoryUsage(process.memoryUsage().heapTotal),
+	);
 	const archetypes = await loadArchetypes(mysql);
 	console.log('\t', 'loaded archetypes', archetypes.length);
+	console.debug(
+		'memory usage',
+		'after loaded archetypes',
+		formatMemoryUsage(process.memoryUsage().heapUsed),
+		'/',
+		formatMemoryUsage(process.memoryUsage().heapTotal),
+	);
 	const patchInfo = await getLastConstructedPatch();
 
 	const rowsForTime = rows.filter((r) => isCorrectTime(r, timePeriod, patchInfo));
+	console.debug(
+		'memory usage',
+		'after time filter',
+		formatMemoryUsage(process.memoryUsage().heapUsed),
+		'/',
+		formatMemoryUsage(process.memoryUsage().heapTotal),
+	);
 	const relevantRows = rowsForTime.filter((r) => isCorrectRank(r, rankBracket));
 	console.log('\t', 'relevantRows', relevantRows.length, rankBracket);
+	console.debug(
+		'memory usage',
+		'after rank filter',
+		formatMemoryUsage(process.memoryUsage().heapUsed),
+		'/',
+		formatMemoryUsage(process.memoryUsage().heapTotal),
+	);
 	const archetypeStats = buildArchetypes(relevantRows, archetypes, format);
 	console.log('\t', 'built archetype stats', archetypeStats.length);
+	console.debug(
+		'memory usage',
+		'after archetype stats',
+		formatMemoryUsage(process.memoryUsage().heapUsed),
+		'/',
+		formatMemoryUsage(process.memoryUsage().heapTotal),
+	);
 	const deckStats: readonly DeckStat[] = buildDeckStats(
 		relevantRows,
 		rankBracket,
@@ -62,9 +119,30 @@ export default async (event, context: Context): Promise<any> => {
 		format,
 		archetypeStats,
 	);
+	console.debug(
+		'memory usage',
+		'after deck stats',
+		formatMemoryUsage(process.memoryUsage().heapUsed),
+		'/',
+		formatMemoryUsage(process.memoryUsage().heapTotal),
+	);
 	const enhancedArchetypes = enhanceArchetypeStats(archetypeStats, deckStats);
 	console.log('\t', 'built deck stats', deckStats.length);
+	console.debug(
+		'memory usage',
+		'after archetypes enhanced',
+		formatMemoryUsage(process.memoryUsage().heapUsed),
+		'/',
+		formatMemoryUsage(process.memoryUsage().heapTotal),
+	);
 	await saveDeckStats(mysql, deckStats, enhancedArchetypes, rankBracket, timePeriod, format);
+	console.debug(
+		'memory usage',
+		'after save decks',
+		formatMemoryUsage(process.memoryUsage().heapUsed),
+		'/',
+		formatMemoryUsage(process.memoryUsage().heapTotal),
+	);
 
 	return { statusCode: 200, body: null };
 };

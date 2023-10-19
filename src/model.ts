@@ -50,6 +50,7 @@ export interface DeckStat {
 	};
 	readonly archetypeCoreCards?: readonly string[];
 	readonly cardsData: readonly ConstructedCardData[];
+	readonly matchupInfo: readonly ConstructedMatchupInfo[];
 }
 
 export interface ConstructedCardData {
@@ -67,6 +68,14 @@ export interface ConstructedCardData {
 	drawnThenWin: number;
 }
 
+export interface ConstructedMatchupInfo {
+	readonly opponentClass: string;
+	readonly opponentArchetypeId?: number;
+	readonly totalGames: number;
+	readonly wins: number;
+	readonly losses: number;
+}
+
 export interface ArchetypeStat {
 	readonly id: number;
 	readonly name: string;
@@ -76,6 +85,7 @@ export interface ArchetypeStat {
 	readonly winrate: number;
 	readonly coreCards: readonly string[];
 	readonly cardsData: readonly ConstructedCardData[];
+	readonly matchupInfo: readonly ConstructedMatchupInfo[];
 }
 
 export type RankBracket =
