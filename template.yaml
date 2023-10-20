@@ -31,4 +31,5 @@ Resources:
                     Type: Schedule
                     Properties:
                         # Triggers every 4 hours
-                        Schedule: cron(0 4/4 * * ? *)
+                        # Schedule: cron(0 4/4 * * ? *)
+                        Schedule: cron(0 18 * * ? *) # run only once a day to reduce costs
