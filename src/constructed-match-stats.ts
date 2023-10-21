@@ -17,8 +17,10 @@ export const loadRows = async (
 
 export const isCorrectTime = (row: ConstructedMatchStatDbRow, timePeriod: TimePeriod, patch: PatchInfo): boolean => {
 	switch (timePeriod) {
-		case 'past-30':
-			return new Date(row.creationDate) >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+		// case 'past-30':
+		// 	return new Date(row.creationDate) >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+		case 'past-20':
+			return new Date(row.creationDate) >= new Date(Date.now() - 20 * 24 * 60 * 60 * 1000);
 		case 'past-7':
 			return new Date(row.creationDate) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 		case 'past-3':

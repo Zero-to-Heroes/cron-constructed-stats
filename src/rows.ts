@@ -109,7 +109,7 @@ const performRowsProcessing = async (connection: Connection, format: GameFormat)
 		const query = connection.query(
 			`
 				SELECT * FROM constructed_match_stats
-				WHERE creationDate > DATE_SUB(NOW(), INTERVAL 30 DAY)
+				WHERE creationDate > DATE_SUB(NOW(), INTERVAL 20 DAY)
 				AND format = (?)
 			`,
 			[format],

@@ -180,7 +180,7 @@ const dispatchEvents = async (context: Context, format: GameFormat) => {
 	await saveRowsOnS3(format);
 
 	console.log('dispatching events');
-	const allTimePeriod: readonly TimePeriod[] = ['last-patch', 'past-30', 'past-7', 'past-3', 'current-season'];
+	const allTimePeriod: readonly TimePeriod[] = ['last-patch', 'past-20', 'past-7', 'past-3', 'current-season'];
 	const allRankBracket: readonly RankBracket[] = [
 		'top-2000-legend',
 		'legend',
@@ -190,8 +190,6 @@ const dispatchEvents = async (context: Context, format: GameFormat) => {
 		'bronze-gold',
 		'all',
 	];
-	// const allTimePeriod: readonly TimePeriod[] = ['past-30'];
-	// const allRankBracket: readonly RankBracket[] = ['all'];
 	for (const timePeriod of allTimePeriod) {
 		for (const rankBracket of allRankBracket) {
 			const newEvent = {

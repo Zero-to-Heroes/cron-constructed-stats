@@ -96,5 +96,5 @@ export type RankBracket =
 	| 'platinum'
 	| 'bronze-gold'
 	| 'all';
-export type TimePeriod = 'past-30' | 'past-7' | 'past-3' | 'current-season' | 'last-patch';
+export type TimePeriod = 'past-20' | 'past-7' | 'past-3' | 'current-season' | 'last-patch';
 export type GameFormat = 'standard' | 'wild' | 'twist' | 'classic';

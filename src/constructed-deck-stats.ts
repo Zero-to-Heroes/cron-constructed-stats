@@ -52,7 +52,7 @@ const buildDeckStatsForRankBracket = (
 		// Legacy decklist truncated because of the database column size
 		.filter((decklist) => decklist?.length !== 145)
 		.map((decklist) => {
-			if (i % 10000 === 0) {
+			if (i % 20000 === 0) {
 				console.debug(
 					'memory usage',
 					`after built ${i} decks`,
