@@ -1,7 +1,7 @@
 import { decode } from '@firestone-hs/deckstrings';
-import { allCards } from './build-constructed-deck-stats';
+import { AllCardsService } from '@firestone-hs/reference-data';
 
-export const extractCardsForList = (decklist: string): readonly string[] => {
+export const extractCardsForList = (decklist: string, allCards: AllCardsService): readonly string[] => {
 	// Legacy decklist truncated because of the database column size
 	if (decklist?.length === 145) {
 		return [];

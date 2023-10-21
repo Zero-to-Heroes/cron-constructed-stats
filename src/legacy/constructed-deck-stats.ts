@@ -1,8 +1,5 @@
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
-import { allClasses } from './archetype-stats';
-import { GAMES_THRESHOLD } from './build-constructed-deck-stats';
-import { buildCardsDataForDeck } from './constructed-card-data';
-import { extractCardsForList } from './hs-utils';
+import { extractCardsForList } from '../hs-utils';
 import {
 	ArchetypeStat,
 	ConstructedMatchStatDbRow,
@@ -11,8 +8,11 @@ import {
 	GameFormat,
 	RankBracket,
 	TimePeriod,
-} from './model';
-import { formatMemoryUsage, round } from './utils';
+} from '../model';
+import { formatMemoryUsage, round } from '../utils';
+import { allClasses } from './archetype-stats';
+import { GAMES_THRESHOLD, allCards } from './build-constructed-deck-stats';
+import { buildCardsDataForDeck } from './constructed-card-data';
 
 export const buildDeckStats = (
 	rows: readonly ConstructedMatchStatDbRow[],
@@ -128,7 +128,7 @@ const buildCardVariations = (
 		added: [],
 		removed: [],
 	};
-	const deckCards = extractCardsForList(decklist);
+	const deckCards = extractCardsForList(decklist, allCards);
 	if (!deckCards?.length) {
 		throw new Error('Invalid decklist: ' + decklist);
 	}

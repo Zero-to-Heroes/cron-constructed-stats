@@ -3,8 +3,8 @@ import { S3 as S3AWS } from 'aws-sdk';
 import SecretsManager, { GetSecretValueRequest, GetSecretValueResponse } from 'aws-sdk/clients/secretsmanager';
 import { Connection, createPool } from 'mysql';
 import { Readable } from 'stream';
+import { ConstructedMatchStatDbRow, GameFormat } from '../model';
 import { WORKING_ROWS_FILE, s3 } from './build-constructed-deck-stats';
-import { ConstructedMatchStatDbRow, GameFormat } from './model';
 
 export const readRowsFromS3 = async (format: GameFormat): Promise<readonly ConstructedMatchStatDbRow[]> => {
 	return new Promise<readonly ConstructedMatchStatDbRow[]>((resolve, reject) => {

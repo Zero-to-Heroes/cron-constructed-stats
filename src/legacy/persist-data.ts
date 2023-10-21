@@ -1,8 +1,8 @@
 import { S3 } from '@firestone-hs/aws-lambda-utils';
 import serverlessMysql from 'serverless-mysql';
 import { gzipSync } from 'zlib';
+import { ArchetypeStat, ArchetypeStats, DeckStat, DeckStats, GameFormat, RankBracket, TimePeriod } from '../model';
 import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from './build-constructed-deck-stats';
-import { ArchetypeStat, ArchetypeStats, DeckStat, DeckStats, GameFormat, RankBracket, TimePeriod } from './model';
 
 export const saveDeckStats = async (
 	mysql: serverlessMysql.ServerlessMysql,

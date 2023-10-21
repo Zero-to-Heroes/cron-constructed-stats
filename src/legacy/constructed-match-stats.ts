@@ -1,6 +1,6 @@
 import { PatchInfo } from '@firestone-hs/aws-lambda-utils';
 import serverlessMysql from 'serverless-mysql';
-import { ConstructedMatchStatDbRow, GameFormat, RankBracket, TimePeriod } from './model';
+import { ConstructedMatchStatDbRow, GameFormat, RankBracket, TimePeriod } from '../model';
 
 export const loadRows = async (
 	mysql: serverlessMysql.ServerlessMysql,

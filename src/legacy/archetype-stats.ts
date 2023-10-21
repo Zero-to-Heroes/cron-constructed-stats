@@ -1,9 +1,7 @@
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
 import { CardClass } from '@firestone-hs/reference-data';
-import { Archetype } from './archetypes';
-import { CORE_CARD_THRESHOLD } from './build-constructed-deck-stats';
-import { buildCardsDataForArchetype } from './constructed-card-data';
-import { extractCardsForList } from './hs-utils';
+import { Archetype } from '../archetypes';
+import { extractCardsForList } from '../hs-utils';
 import {
 	ArchetypeStat,
 	ConstructedCardData,
@@ -11,8 +9,10 @@ import {
 	ConstructedMatchupInfo,
 	DeckStat,
 	GameFormat,
-} from './model';
-import { round } from './utils';
+} from '../model';
+import { round } from '../utils';
+import { CORE_CARD_THRESHOLD, allCards } from './build-constructed-deck-stats';
+import { buildCardsDataForArchetype } from './constructed-card-data';
 
 // Build the list of all classes from the CardClass enum
 export const allClasses: readonly string[] = Object.keys(CardClass)
@@ -80,7 +80,7 @@ const isOther = (archetypeName: string): boolean => {
 // in the archetype
 const buildCoreCards = (rows: readonly ConstructedMatchStatDbRow[]): readonly string[] => {
 	const cardsForDecks = rows
-		.map((row) => extractCardsForList(row.playerDecklist))
+		.map((row) => extractCardsForList(row.playerDecklist, allCards))
 		.filter((cards) => cards.length > 0);
 
 	// First build the list of all unique cards

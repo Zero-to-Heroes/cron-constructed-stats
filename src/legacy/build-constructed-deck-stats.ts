@@ -5,14 +5,14 @@ import { S3, getConnectionReadOnly, getLastConstructedPatch, sleep } from '@fire
 import { AllCardsService } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
 import AWS from 'aws-sdk';
+import { loadArchetypes } from '../archetypes';
+import { ConstructedMatchStatDbRow, DeckStat, GameFormat, RankBracket, TimePeriod } from '../model';
+import { formatMemoryUsage } from '../utils';
 import { buildArchetypes, enhanceArchetypeStats } from './archetype-stats';
-import { loadArchetypes } from './archetypes';
 import { buildDeckStats } from './constructed-deck-stats';
 import { isCorrectRank, isCorrectTime } from './constructed-match-stats';
-import { ConstructedMatchStatDbRow, DeckStat, GameFormat, RankBracket, TimePeriod } from './model';
 import { saveDeckStats } from './persist-data';
 import { readRowsFromS3, saveRowsOnS3 } from './rows';
-import { formatMemoryUsage } from './utils';
 
 export const DECK_STATS_BUCKET = 'static.zerotoheroes.com';
 export const DECK_STATS_KEY_PREFIX = `api/constructed/stats`;

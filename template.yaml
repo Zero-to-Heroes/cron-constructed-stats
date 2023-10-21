@@ -9,10 +9,10 @@ Resources:
     BuildConstructedDeckStats:
         Type: AWS::Serverless::Function
         Properties:
-            Handler: build-constructed-deck-stats.default
+            Handler: legacy/build-constructed-deck-stats.default
             Runtime: nodejs16.x
             Timeout: 880
-            CodeUri: ./dist/build-constructed-deck-stats
+            CodeUri: ./dist/legacy/build-constructed-deck-stats
             MemorySize: 10240
             ReservedConcurrentExecutions: 10
             Policies:

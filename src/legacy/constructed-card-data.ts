@@ -1,7 +1,7 @@
 import { MatchAnalysis } from '@firestone-hs/assign-constructed-archetype';
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
-import { ConstructedCardData, ConstructedMatchStatDbRow, DeckStat } from './model';
-import { arraysEqual } from './utils';
+import { ConstructedCardData, ConstructedMatchStatDbRow, DeckStat } from '../model';
+import { arraysEqual } from '../utils';
 
 // Archetype cards data probably the same, we just don't have an initial list of cards
 // And so, how to handle the second copy?
