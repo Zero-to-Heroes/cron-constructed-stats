@@ -10,7 +10,6 @@ import {
 	DeckStat,
 	GameFormat,
 } from '../model';
-import { round } from '../utils';
 import { CORE_CARD_THRESHOLD, allCards } from './build-constructed-deck-stats';
 import { buildCardsDataForArchetype } from './constructed-card-data';
 
@@ -26,30 +25,30 @@ export const buildArchetypes = (
 	refArchetypes: readonly Archetype[],
 	format: GameFormat,
 ): readonly ArchetypeStat[] => {
+	// console.log('building archetypes from rows', rows.length, rows[0]);
 	const groupedByArchetype = groupByFunction((row: ConstructedMatchStatDbRow) => row.playerArchetypeId)(rows);
-	const archetypeStats: readonly ArchetypeStat[] = Object.keys(groupedByArchetype)
-		.map((archetypeId) => {
-			const archetypeRows: readonly ConstructedMatchStatDbRow[] = groupedByArchetype[archetypeId];
-			const totalGames: number = archetypeRows.length;
-			const totalWins: number = archetypeRows.filter((row) => row.result === 'won').length;
-			const winrate: number = totalWins / totalGames;
-			const archetype = refArchetypes.find((arch) => arch.id === parseInt(archetypeId));
-			const coreCards: readonly string[] = isOther(archetype.archetype) ? [] : buildCoreCards(archetypeRows);
-			const result: ArchetypeStat = {
-				id: +archetypeId,
-				name: archetype.archetype,
-				format: format,
-				heroCardClass: archetypeRows[0]?.playerClass,
-				totalGames: totalGames,
-				totalWins: totalWins,
-				coreCards: coreCards,
-				winrate: round(winrate),
-				cardsData: [],
-				matchupInfo: [],
-			};
-			return result;
-		})
-		.filter((stat) => stat.winrate >= 0.3);
+	// console.log('number of archetypes', Object.keys(groupedByArchetype).length);
+	const archetypeStats: readonly ArchetypeStat[] = Object.keys(groupedByArchetype).map((archetypeId) => {
+		const archetypeRows: readonly ConstructedMatchStatDbRow[] = groupedByArchetype[archetypeId];
+		const totalGames: number = archetypeRows.length;
+		const totalWins: number = archetypeRows.filter((row) => row.result === 'won').length;
+		// const winrate: number = totalWins / totalGames;
+		const archetype = refArchetypes.find((arch) => arch.id === parseInt(archetypeId));
+		const coreCards: readonly string[] = isOther(archetype.archetype) ? [] : buildCoreCards(archetypeRows);
+		const result: ArchetypeStat = {
+			id: +archetypeId,
+			name: archetype.archetype,
+			format: format,
+			heroCardClass: archetypeRows[0]?.playerClass,
+			totalGames: totalGames,
+			totalWins: totalWins,
+			coreCards: coreCards,
+			winrate: null,
+			cardsData: [],
+			matchupInfo: [],
+		};
+		return result;
+	});
 	return archetypeStats;
 };
 

@@ -7,59 +7,55 @@ import {
 	DeckStat,
 	GameFormat,
 	RankBracket,
-	TimePeriod,
 } from '../model';
-import { formatMemoryUsage, round } from '../utils';
 import { allClasses } from './archetype-stats';
-import { GAMES_THRESHOLD, allCards } from './build-constructed-deck-stats';
+import { allCards } from './build-constructed-deck-stats';
 import { buildCardsDataForDeck } from './constructed-card-data';
 
 export const buildDeckStats = (
 	rows: readonly ConstructedMatchStatDbRow[],
 	rankBracket: RankBracket,
-	timePeriod: TimePeriod,
 	format: GameFormat,
 	archetypes: readonly ArchetypeStat[],
 ): readonly DeckStat[] => {
-	return buildDeckStatsForRankBracket(rows, rankBracket, timePeriod, format, archetypes);
+	return buildDeckStatsForRankBracket(rows, rankBracket, format, archetypes);
 };
 
 const buildDeckStatsForRankBracket = (
 	rows: readonly ConstructedMatchStatDbRow[],
 	rankBracket: RankBracket,
-	timePeriod: TimePeriod,
 	format: GameFormat,
 	archetypes: readonly ArchetypeStat[],
 ): readonly DeckStat[] => {
 	const groupedByDeck = groupByFunction((row: ConstructedMatchStatDbRow) => row.playerDecklist)(rows);
-	console.debug(
-		'memory usage',
-		'after grouped by deck',
-		formatMemoryUsage(process.memoryUsage().heapUsed),
-		'/',
-		formatMemoryUsage(process.memoryUsage().heapTotal),
-	);
+	// console.debug(
+	// 	'memory usage',
+	// 	'after grouped by deck',
+	// 	formatMemoryUsage(process.memoryUsage().heapUsed),
+	// 	'/',
+	// 	formatMemoryUsage(process.memoryUsage().heapTotal),
+	// );
 	rows = null;
-	console.debug(
-		'memory usage',
-		'before building deck stats',
-		formatMemoryUsage(process.memoryUsage().heapUsed),
-		'/',
-		formatMemoryUsage(process.memoryUsage().heapTotal),
-	);
+	// console.debug(
+	// 	'memory usage',
+	// 	'before building deck stats',
+	// 	formatMemoryUsage(process.memoryUsage().heapUsed),
+	// 	'/',
+	// 	formatMemoryUsage(process.memoryUsage().heapTotal),
+	// );
 	let i = 0;
 	const deckStats: readonly DeckStat[] = Object.keys(groupedByDeck)
 		// Legacy decklist truncated because of the database column size
 		.filter((decklist) => decklist?.length !== 145)
 		.map((decklist) => {
 			if (i % 20000 === 0) {
-				console.debug(
-					'memory usage',
-					`after built ${i} decks`,
-					formatMemoryUsage(process.memoryUsage().heapUsed),
-					'/',
-					formatMemoryUsage(process.memoryUsage().heapTotal),
-				);
+				// console.debug(
+				// 	'memory usage',
+				// 	`after built ${i} decks`,
+				// 	formatMemoryUsage(process.memoryUsage().heapUsed),
+				// 	'/',
+				// 	formatMemoryUsage(process.memoryUsage().heapTotal),
+				// );
 			}
 			let deckRows: readonly ConstructedMatchStatDbRow[] = groupedByDeck[decklist];
 			groupedByDeck[decklist] = null;
@@ -78,11 +74,11 @@ const buildDeckStatsForRankBracket = (
 					// name: deckRows[0].playerDecklist,
 					decklist: deckRows[0].playerDecklist,
 					rankBracket: rankBracket,
-					timePeriod: timePeriod,
+					timePeriod: null,
 					format: format,
 					totalGames: totalGames,
 					totalWins: totalWins,
-					winrate: round(winrate),
+					winrate: null,
 					cardVariations: cardVariations,
 					archetypeCoreCards: archetypeStat?.coreCards,
 					cardsData: cardsData,
@@ -96,9 +92,9 @@ const buildDeckStatsForRankBracket = (
 			} finally {
 				i++;
 			}
-		})
-		.filter((stat) => stat?.totalGames >= GAMES_THRESHOLD)
-		.filter((stat) => stat.winrate >= 0.3);
+		});
+	// .filter((stat) => stat?.totalGames >= GAMES_THRESHOLD)
+	// .filter((stat) => stat.winrate >= 0.3);
 	return deckStats;
 };
 
@@ -115,7 +111,7 @@ const buildMatchupInfoForDeck = (rows: readonly ConstructedMatchStatDbRow[]): re
 	});
 };
 
-const buildCardVariations = (
+export const buildCardVariations = (
 	decklist: string,
 	coreCards: readonly string[],
 ): {

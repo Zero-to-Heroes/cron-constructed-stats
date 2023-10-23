@@ -43,6 +43,7 @@ export interface DeckStat {
 	readonly timePeriod: TimePeriod;
 	readonly format: GameFormat;
 	readonly totalGames: number;
+	readonly totalWins: number;
 	readonly winrate: number;
 	readonly cardVariations: {
 		readonly added: readonly string[];
@@ -82,6 +83,7 @@ export interface ArchetypeStat {
 	readonly format: GameFormat;
 	readonly heroCardClass: string;
 	readonly totalGames: number;
+	readonly totalWins: number;
 	readonly winrate: number;
 	readonly coreCards: readonly string[];
 	readonly cardsData: readonly ConstructedCardData[];
