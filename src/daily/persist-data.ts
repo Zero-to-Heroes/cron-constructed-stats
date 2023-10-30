@@ -1,7 +1,7 @@
 import { S3 } from '@firestone-hs/aws-lambda-utils';
 import { gzipSync } from 'zlib';
 import { ArchetypeStat, ArchetypeStats, DeckStat, DeckStats, GameFormat, RankBracket } from '../model';
-import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX, yesterdayDate } from './build-constructed-deck-stats';
+import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX, targetDate } from './build-constructed-deck-stats';
 
 export const saveDeckStats = async (
 	deckStats: readonly DeckStat[],
@@ -31,7 +31,7 @@ const saveGlobalDeckStats = async (
 		archetypeStats: archetypeStats,
 	} as DeckStats;
 	const gzippedResult = gzipSync(JSON.stringify(result));
-	const destination = `${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/daily/${yesterdayDate()}.gz.json`;
+	const destination = `${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/daily/${targetDate}.gz.json`;
 	// console.log('writing to ', destination);
 	await s3.writeFile(gzippedResult, DECK_STATS_BUCKET, destination, 'application/json', 'gzip');
 };
@@ -51,7 +51,7 @@ const saveGlobalArchetypeStats = async (
 		archetypeStats: archetypeStats,
 	};
 	const gzippedMinResult = gzipSync(JSON.stringify(result));
-	const destination = `${DECK_STATS_KEY_PREFIX}/archetypes/${format}/${rankBracket}/daily/${yesterdayDate()}.gz.json`;
+	const destination = `${DECK_STATS_KEY_PREFIX}/archetypes/${format}/${rankBracket}/daily/${targetDate}.gz.json`;
 	// console.log('writing to ', destination);
 	await s3.writeFile(gzippedMinResult, DECK_STATS_BUCKET, destination, 'application/json', 'gzip');
 };

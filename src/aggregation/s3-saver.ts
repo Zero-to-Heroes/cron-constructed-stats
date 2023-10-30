@@ -4,20 +4,20 @@ import { ArchetypeStat, ArchetypeStats, DeckStat, DeckStats, GameFormat, RankBra
 import { s3 } from './build-aggregated-stats';
 
 export const persistData = async (
-	archetypeStats: ArchetypeStats,
-	deckStats: DeckStats,
+	archetypeStats: readonly ArchetypeStat[],
+	deckStats: readonly DeckStat[],
 	rankBracket: RankBracket,
 	timePeriod: TimePeriod,
 	format: GameFormat,
 ): Promise<void> => {
-	await saveGlobalArchetypeStats(archetypeStats.archetypeStats, rankBracket, timePeriod, format);
-	console.log('saved global archetype stats', archetypeStats.archetypeStats.length);
-	await saveGlobalDeckStats(deckStats.deckStats, rankBracket, timePeriod, format);
-	console.log('saved global deck stats', deckStats.deckStats.length);
-	await saveDetailedDeckStats(deckStats.deckStats, rankBracket, timePeriod, format);
-	console.log('saved detailed deck stats', deckStats.deckStats.length);
-	await saveDetailedArchetypeStats(archetypeStats.archetypeStats, rankBracket, timePeriod, format);
-	console.log('saved detailed archetype stats', archetypeStats.archetypeStats.length);
+	await saveGlobalArchetypeStats(archetypeStats, rankBracket, timePeriod, format);
+	console.log('saved global archetype stats', archetypeStats.length);
+	await saveGlobalDeckStats(deckStats, rankBracket, timePeriod, format);
+	console.log('saved global deck stats', deckStats.length);
+	await saveDetailedDeckStats(deckStats, rankBracket, timePeriod, format);
+	console.log('saved detailed deck stats', deckStats.length);
+	await saveDetailedArchetypeStats(archetypeStats, rankBracket, timePeriod, format);
+	console.log('saved detailed archetype stats', archetypeStats.length);
 	console.log('finished saving data');
 };
 

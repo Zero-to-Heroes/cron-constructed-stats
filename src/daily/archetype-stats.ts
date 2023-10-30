@@ -1,5 +1,5 @@
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
-import { CardClass } from '@firestone-hs/reference-data';
+import { AllCardsService, CardClass } from '@firestone-hs/reference-data';
 import { Archetype } from '../archetypes';
 import { extractCardsForList } from '../hs-utils';
 import {
@@ -10,7 +10,7 @@ import {
 	DeckStat,
 	GameFormat,
 } from '../model';
-import { CORE_CARD_THRESHOLD, allCards } from './build-constructed-deck-stats';
+import { CORE_CARD_THRESHOLD } from './build-constructed-deck-stats';
 import { buildCardsDataForArchetype } from './constructed-card-data';
 
 // Build the list of all classes from the CardClass enum
@@ -24,6 +24,7 @@ export const buildArchetypes = (
 	rows: readonly ConstructedMatchStatDbRow[],
 	refArchetypes: readonly Archetype[],
 	format: GameFormat,
+	allCards: AllCardsService,
 ): readonly ArchetypeStat[] => {
 	// console.log('building archetypes from rows', rows.length, rows[0]);
 	const groupedByArchetype = groupByFunction((row: ConstructedMatchStatDbRow) => row.playerArchetypeId)(rows);
@@ -34,7 +35,9 @@ export const buildArchetypes = (
 		const totalWins: number = archetypeRows.filter((row) => row.result === 'won').length;
 		// const winrate: number = totalWins / totalGames;
 		const archetype = refArchetypes.find((arch) => arch.id === parseInt(archetypeId));
-		const coreCards: readonly string[] = isOther(archetype.archetype) ? [] : buildCoreCards(archetypeRows);
+		const coreCards: readonly string[] = isOther(archetype.archetype)
+			? []
+			: buildCoreCards(archetypeRows, allCards);
 		const result: ArchetypeStat = {
 			id: +archetypeId,
 			name: archetype.archetype,
@@ -71,14 +74,14 @@ export const enhanceArchetypeStats = (
 	});
 };
 
-const isOther = (archetypeName: string): boolean => {
+export const isOther = (archetypeName: string): boolean => {
 	return allClasses.includes(archetypeName?.toLowerCase().replace('xl', '').replace('-', '').trim());
 };
 
 // Build the list of the cards that are present in all of the decks of the archetype
 // When a card appears multiple times in each deck, it should appear multiple times
 // in the archetype
-const buildCoreCards = (rows: readonly ConstructedMatchStatDbRow[]): readonly string[] => {
+const buildCoreCards = (rows: readonly ConstructedMatchStatDbRow[], allCards: AllCardsService): readonly string[] => {
 	const cardsForDecks = rows
 		.map((row) => extractCardsForList(row.playerDecklist, allCards))
 		.filter((cards) => cards.length > 0);

@@ -4,7 +4,7 @@ import SecretsManager, { GetSecretValueRequest, GetSecretValueResponse } from 'a
 import { Connection, createPool } from 'mysql';
 import { Readable } from 'stream';
 import { ConstructedMatchStatDbRow, GameFormat } from '../model';
-import { WORKING_ROWS_FILE, s3 } from './build-constructed-deck-stats';
+import { WORKING_ROWS_FILE, s3, targetDate } from './build-constructed-deck-stats';
 
 export const readRowsFromS3 = async (format: GameFormat): Promise<readonly ConstructedMatchStatDbRow[]> => {
 	return new Promise<readonly ConstructedMatchStatDbRow[]>((resolve, reject) => {
@@ -109,14 +109,11 @@ const performRowsProcessing = async (connection: Connection, format: GameFormat)
 		// Load all the rows from the day before. Not simply from the past 24 hours, but from the
 		// day before today. For instance, if it's 24/09 at 04:00, we load all the rows that were
 		// inserted on the 23/09, from 00:00 to 23:59
-		const yesterday = new Date();
-		yesterday.setDate(yesterday.getDate() - 1);
-		const yesterdayStr = yesterday.toISOString().slice(0, 10);
-		console.log('yesterdayStr', yesterdayStr);
+		console.log('yesterdayStr', targetDate);
 		const queryStr = `
 			SELECT * FROM constructed_match_stats
-			WHERE creationDate >= '${yesterdayStr}'
-			AND creationDate < '${yesterdayStr} 23:59:59'
+			WHERE creationDate >= '${targetDate}'
+			AND creationDate < '${targetDate} 23:59:59'
 			AND format = '${format}'
 		`;
 		console.log('running query', queryStr);

@@ -1,14 +1,16 @@
-import { S3, getLastConstructedPatch, sleep } from '@firestone-hs/aws-lambda-utils';
+import { S3, getConnectionReadOnly, getLastConstructedPatch, sleep } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
 import AWS from 'aws-sdk';
-import { ArchetypeStats, DeckStats, GameFormat, RankBracket, TimePeriod } from '../model';
-import { aggregateDeckData } from './data-aggregation-deck';
-import { aggregateArchetypeData } from './data-aggregattion-archetype';
-import { loadDailyDataArchetypeFromS3, loadDailyDataDeckFromS3 } from './s3-loader';
+import { loadArchetypes } from '../archetypes';
+import { enhanceArchetypeStats } from '../daily/archetype-stats';
+import { ArchetypeStat, DeckStat, DeckStats, GameFormat, RankBracket, TimePeriod } from '../model';
+import { buildArchetypeStats } from './archetypes-rebuild';
+import { buildDecksStats } from './deck-stats-rebuild';
+import { loadDailyDataDeckFromS3 } from './s3-loader';
 import { persistData } from './s3-saver';
 
-export const allCards = new AllCardsService();
+const allCards = new AllCardsService();
 export const s3 = new S3();
 const lambda = new AWS.Lambda();
 
@@ -39,28 +41,35 @@ export default async (event, context: Context): Promise<any> => {
 		patchInfo,
 	);
 	console.log('loaded daily deck data', dailyDeckData.length);
-	const dailyArchetypeData: readonly ArchetypeStats[] = await loadDailyDataArchetypeFromS3(
-		format,
-		rankBracket,
-		timePeriod,
-		patchInfo,
-	);
-	console.log('loaded daily archetype data', dailyArchetypeData.length);
 
-	const aggregatedArchetypeData: ArchetypeStats = dailyArchetypeData.length
-		? aggregateArchetypeData(dailyArchetypeData)
-		: null;
+	const mysql = await getConnectionReadOnly();
+	const archetypes = await loadArchetypes(mysql);
+	mysql.end();
+
+	// const dailyArchetypeData: readonly ArchetypeStats[] = await loadDailyDataArchetypeFromS3(
+	// 	format,
+	// 	rankBracket,
+	// 	timePeriod,
+	// 	patchInfo,
+	// );
+	// console.log('loaded daily archetype data', dailyArchetypeData.length);
+
+	const archetypeStats: readonly ArchetypeStat[] = buildArchetypeStats(archetypes, dailyDeckData, allCards);
 	console.log(
-		'aggregated archetypes',
-		aggregatedArchetypeData?.archetypeStats?.length,
-		aggregatedArchetypeData?.dataPoints,
+		'archetypeStats',
+		archetypeStats?.length,
+		archetypeStats?.map((a) => a.totalGames).reduce((a, b) => a + b, 0),
 	);
-	const aggregatedDeckData: DeckStats = dailyArchetypeData.length
-		? aggregateDeckData(dailyDeckData, aggregatedArchetypeData)
-		: null;
-	console.log('aggregated decks', aggregatedDeckData?.deckStats?.length, aggregatedDeckData?.dataPoints);
+	const deckStats: readonly DeckStat[] = buildDecksStats(dailyDeckData, archetypeStats, allCards);
+	console.log(
+		'deckStats',
+		deckStats?.length,
+		deckStats?.map((a) => a.totalGames).reduce((a, b) => a + b, 0),
+	);
 
-	await persistData(aggregatedArchetypeData, aggregatedDeckData, rankBracket, timePeriod, format);
+	const enhancedArchetypes = enhanceArchetypeStats(archetypeStats, deckStats);
+
+	await persistData(enhancedArchetypes, deckStats, rankBracket, timePeriod, format);
 };
 
 const dispatchFormatEvents = async (context: Context) => {

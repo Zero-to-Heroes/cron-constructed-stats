@@ -19,12 +19,12 @@ export const WORKING_ROWS_FILE = `${DECK_STATS_KEY_PREFIX}/working-rows-daily-%f
 // export const GAMES_THRESHOLD = 50;
 export const CORE_CARD_THRESHOLD = 0.9;
 
-export const allCards = new AllCardsService();
+const allCards = new AllCardsService();
 export const s3 = new S3();
 const lambda = new AWS.Lambda();
 
 // The date of the day before, in YYYY-MM-dd format
-export const yesterdayDate = () => {
+const yesterdayDate = () => {
 	const now = new Date();
 	const yesterday = new Date(now.setDate(now.getDate() - 1));
 	const year = yesterday.getFullYear();
@@ -32,10 +32,12 @@ export const yesterdayDate = () => {
 	const day = yesterday.getDate();
 	return `${year}-${month}-${day}`;
 };
+export let targetDate = yesterdayDate();
 
 // [1]: https://aws.amazon.com/blogs/compute/node-js-8-10-runtime-now-available-in-aws-lambda/
 export default async (event, context: Context): Promise<any> => {
 	await allCards.initializeCardsDb();
+	targetDate = event.overrideTargetDate || targetDate;
 
 	if (!event.format) {
 		await dispatchFormatEvents(context);
@@ -59,9 +61,9 @@ export default async (event, context: Context): Promise<any> => {
 	console.log('\t', 'loaded archetypes', archetypes.length);
 	const relevantRows = rows.filter((r) => isCorrectRank(r, rankBracket));
 	console.log('\t', 'relevantRows', relevantRows.length, rankBracket);
-	const archetypeStats = buildArchetypes(relevantRows, archetypes, format);
+	const archetypeStats = buildArchetypes(relevantRows, archetypes, format, allCards);
 	console.log('\t', 'built archetype stats', archetypeStats.length);
-	const deckStats: readonly DeckStat[] = buildDeckStats(relevantRows, rankBracket, format, archetypeStats);
+	const deckStats: readonly DeckStat[] = buildDeckStats(relevantRows, rankBracket, format, archetypeStats, allCards);
 	const enhancedArchetypes = enhanceArchetypeStats(archetypeStats, deckStats);
 	console.log('\t', 'built deck stats', deckStats.length);
 	await saveDeckStats(deckStats, enhancedArchetypes, rankBracket, format);
@@ -70,8 +72,8 @@ export default async (event, context: Context): Promise<any> => {
 };
 
 const dispatchFormatEvents = async (context: Context) => {
-	// const allFormats: readonly GameFormat[] = ['standard', 'wild', 'twist'];
-	const allFormats: readonly GameFormat[] = ['standard'];
+	const allFormats: readonly GameFormat[] = ['standard', 'wild', 'twist'];
+	// const allFormats: readonly GameFormat[] = ['standard'];
 	for (const format of allFormats) {
 		console.log('dispatching events for format', format);
 		const newEvent = {
@@ -103,16 +105,16 @@ const dispatchEvents = async (context: Context, format: GameFormat) => {
 	await saveRowsOnS3(format);
 
 	console.log('dispatching events');
-	// const allRankBracket: readonly RankBracket[] = [
-	// 	'top-2000-legend',
-	// 	'legend',
-	// 	'legend-diamond',
-	// 	'diamond',
-	// 	'platinum',
-	// 	'bronze-gold',
-	// 	'all',
-	// ];
-	const allRankBracket: readonly RankBracket[] = ['all'];
+	const allRankBracket: readonly RankBracket[] = [
+		'top-2000-legend',
+		'legend',
+		'legend-diamond',
+		'diamond',
+		'platinum',
+		'bronze-gold',
+		'all',
+	];
+	// const allRankBracket: readonly RankBracket[] = ['all'];
 	// for (const timePeriod of allTimePeriod) {
 	for (const rankBracket of allRankBracket) {
 		const newEvent = {

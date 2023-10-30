@@ -1,39 +1,32 @@
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService } from '@firestone-hs/reference-data';
 import { buildCardVariations } from '../daily/constructed-deck-stats';
-import { ArchetypeStat, ArchetypeStats, DeckStat, DeckStats } from '../model';
+import { ArchetypeStat, DeckStat, DeckStats } from '../model';
 import { mergeCardsData, mergeMatchupInfo } from './data-aggregattion-archetype';
 
-export const aggregateDeckData = (
+export const buildDecksStats = (
 	dailyData: readonly DeckStats[],
-	archetypeData: ArchetypeStats,
+	archetypeData: readonly ArchetypeStat[],
 	allCards: AllCardsService,
-): DeckStats => {
-	const result: DeckStats = {
-		lastUpdated: new Date(),
-		rankBracket: dailyData[0].rankBracket,
-		timePeriod: dailyData[0].timePeriod,
-		format: dailyData[0].format,
-		dataPoints: dailyData.map((d) => d.dataPoints).reduce((a, b) => a + b, 0),
-		deckStats: mergeDeckStats(
-			dailyData.flatMap((d) => d.deckStats),
-			archetypeData,
-			allCards,
-		),
-	};
-	return result;
+): readonly DeckStat[] => {
+	const deckStats = buildDeckStats(
+		dailyData.flatMap((d) => d.deckStats),
+		archetypeData,
+		allCards,
+	);
+	return deckStats;
 };
 
-const mergeDeckStats = (
+const buildDeckStats = (
 	deckStats: readonly DeckStat[],
-	archetypeData: ArchetypeStats,
+	archetypeData: readonly ArchetypeStat[],
 	allCards: AllCardsService,
 ): readonly DeckStat[] => {
 	const groupedByDecklist = groupByFunction((a: DeckStat) => a.decklist)(deckStats);
 	return Object.values(groupedByDecklist).map((group) =>
 		mergeDeckStatsForDecklist(
 			group,
-			archetypeData.archetypeStats.find((a) => a.id === group[0].archetypeId),
+			archetypeData.find((a) => a.id === group[0].archetypeId),
 			allCards,
 		),
 	);

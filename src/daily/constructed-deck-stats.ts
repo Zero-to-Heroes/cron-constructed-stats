@@ -1,4 +1,5 @@
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
+import { AllCardsService } from '@firestone-hs/reference-data';
 import { extractCardsForList } from '../hs-utils';
 import {
 	ArchetypeStat,
@@ -9,7 +10,6 @@ import {
 	RankBracket,
 } from '../model';
 import { allClasses } from './archetype-stats';
-import { allCards } from './build-constructed-deck-stats';
 import { buildCardsDataForDeck } from './constructed-card-data';
 
 export const buildDeckStats = (
@@ -17,8 +17,9 @@ export const buildDeckStats = (
 	rankBracket: RankBracket,
 	format: GameFormat,
 	archetypes: readonly ArchetypeStat[],
+	allCards: AllCardsService,
 ): readonly DeckStat[] => {
-	return buildDeckStatsForRankBracket(rows, rankBracket, format, archetypes);
+	return buildDeckStatsForRankBracket(rows, rankBracket, format, archetypes, allCards);
 };
 
 const buildDeckStatsForRankBracket = (
@@ -26,6 +27,7 @@ const buildDeckStatsForRankBracket = (
 	rankBracket: RankBracket,
 	format: GameFormat,
 	archetypes: readonly ArchetypeStat[],
+	allCards: AllCardsService,
 ): readonly DeckStat[] => {
 	const groupedByDeck = groupByFunction((row: ConstructedMatchStatDbRow) => row.playerDecklist)(rows);
 	// console.debug(
@@ -66,7 +68,7 @@ const buildDeckStatsForRankBracket = (
 			const cardsData = buildCardsDataForDeck(deckRows);
 			const matchupInfo = buildMatchupInfoForDeck(deckRows);
 			try {
-				const cardVariations = buildCardVariations(decklist, archetypeStat?.coreCards ?? []);
+				const cardVariations = buildCardVariations(decklist, archetypeStat?.coreCards ?? [], allCards);
 				const result: DeckStat = {
 					playerClass: deckRows[0].playerClass,
 					archetypeId: deckRows[0].playerArchetypeId,
@@ -114,6 +116,7 @@ const buildMatchupInfoForDeck = (rows: readonly ConstructedMatchStatDbRow[]): re
 export const buildCardVariations = (
 	decklist: string,
 	coreCards: readonly string[],
+	allCards: AllCardsService,
 ): {
 	added: readonly string[];
 	removed: readonly string[];
