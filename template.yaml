@@ -6,33 +6,33 @@ Description: Build constructed stats
 
 
 Resources:
-    BuildConstructedDeckStats:
-        Type: AWS::Serverless::Function
-        Properties:
-            Handler: legacy/build-constructed-deck-stats.default
-            Runtime: nodejs16.x
-            Timeout: 880
-            CodeUri: ./dist/legacy/build-constructed-deck-stats
-            MemorySize: 10240
-            ReservedConcurrentExecutions: 10
-            Policies:
-                - AWSLambdaVPCAccessExecutionRole
-                - AmazonSESFullAccess
-                - SecretsManagerReadWrite
-                - AmazonSNSReadOnlyAccess
-                - AmazonS3FullAccess
-                - AWSLambda_FullAccess
-                # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
-            Tags:
-                LambdaName: cron-build-constructed-deck-stats
-            Events:
-                # Populate the info on the last hour
-                LastPeriodTrigger:
-                    Type: Schedule
-                    Properties:
-                        # Triggers every 4 hours
-                        # Schedule: cron(0 4/4 * * ? *)
-                        Schedule: cron(0 18 * * ? *) # run only once a day to reduce costs
+    # BuildConstructedDeckStats:
+    #     Type: AWS::Serverless::Function
+    #     Properties:
+    #         Handler: legacy/build-constructed-deck-stats.default
+    #         Runtime: nodejs16.x
+    #         Timeout: 880
+    #         CodeUri: ./dist/legacy/build-constructed-deck-stats
+    #         MemorySize: 10240
+    #         ReservedConcurrentExecutions: 10
+    #         Policies:
+    #             - AWSLambdaVPCAccessExecutionRole
+    #             - AmazonSESFullAccess
+    #             - SecretsManagerReadWrite
+    #             - AmazonSNSReadOnlyAccess
+    #             - AmazonS3FullAccess
+    #             - AWSLambda_FullAccess
+    #             # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
+    #         Tags:
+    #             LambdaName: cron-build-constructed-deck-stats
+    #         Events:
+    #             # Populate the info on the last hour
+    #             LastPeriodTrigger:
+    #                 Type: Schedule
+    #                 Properties:
+    #                     # Triggers every 4 hours
+    #                     # Schedule: cron(0 4/4 * * ? *)
+    #                     Schedule: cron(0 18 * * ? *) # run only once a day to reduce costs
     BuildDailyConstructedDeckStats:
         Type: AWS::Serverless::Function
         Properties:
