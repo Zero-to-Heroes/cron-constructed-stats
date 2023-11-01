@@ -65,7 +65,7 @@ Resources:
             Runtime: nodejs16.x
             Timeout: 880
             CodeUri: ./dist/aggregation/build-aggregated-stats
-            MemorySize: 4000
+            MemorySize: 8000
             ReservedConcurrentExecutions: 10
             Policies:
                 - AWSLambdaVPCAccessExecutionRole
@@ -83,3 +83,25 @@ Resources:
                     Type: Schedule
                     Properties:
                         Schedule: cron(0 5 * * ? *)
+    RetrieveConstructedDeckDetails:
+        Type: AWS::Serverless::Function
+        Properties:
+            Handler: retrieve/get-constructed-meta-deck.default
+            Runtime: nodejs18.x
+            Timeout: 5
+            MemorySize: 128
+            CodeUri: ./dist/retrieve/get-constructed-meta-deck
+            Policies:
+                - AWSLambdaVPCAccessExecutionRole
+                - AmazonSESFullAccess
+                - SecretsManagerReadWrite
+                - AmazonSNSReadOnlyAccess
+                - AmazonS3FullAccess
+                - AWSLambda_FullAccess
+                # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
+            Tags:
+                LambdaName: api-get-constructed-meta-deck
+            AutoPublishAlias: live
+            FunctionUrlConfig:
+                AuthType: NONE
+

@@ -1,6 +1,8 @@
+import { getConnection } from '@firestone-hs/aws-lambda-utils';
 import { gzipSync } from 'zlib';
 import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../legacy/build-constructed-deck-stats';
 import { ArchetypeStat, ArchetypeStats, DeckStat, DeckStats, GameFormat, RankBracket, TimePeriod } from '../model';
+import { chunk } from '../utils';
 import { s3 } from './build-aggregated-stats';
 
 export const persistData = async (
@@ -99,20 +101,30 @@ const saveDetailedDeckStats = async (
 	format: GameFormat,
 ): Promise<void> => {
 	const workingCopy = deckStats;
-	const result: readonly boolean[] = await Promise.all(
-		workingCopy.map((deck) => {
-			const gzippedResult = gzipSync(JSON.stringify(deck));
+	const chunks = chunk(workingCopy, 20);
+
+	const mysql = await getConnection();
+	const date = new Date();
+	// Try to insert based on format, rankBracket, timePeriod and if it exists, update
+	// the existing row
+	for (const chunk of chunks) {
+		const values = chunk.map((deck) => {
 			const deckId = deck.decklist.replaceAll('/', '-');
-			return s3.writeFile(
-				gzippedResult,
-				DECK_STATS_BUCKET,
-				`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/${timePeriod}/deck/${deckId}.gz.json`,
-				'application/json',
-				'gzip',
-			);
-		}),
-	);
-	console.log('uploaded successfully', result.filter((r) => r).length, '/', workingCopy.length, 'decks');
+			return [date, format, rankBracket, timePeriod, deckId, JSON.stringify(deck)];
+		});
+		const query = `
+			INSERT INTO constructed_deck_stats
+			(lastUpdateDate, format, rankBracket, timePeriod, deckId, deckData)
+			VALUES ?
+			ON DUPLICATE KEY UPDATE
+			deckData = VALUES(deckData),
+			lastUpdateDate = VALUES(lastUpdateDate)
+		`;
+		// console.log('executing query', query, values);
+		await mysql.query(query, [values]);
+		// break;
+	}
+	mysql.end();
 };
 
 const saveDetailedArchetypeStats = async (
