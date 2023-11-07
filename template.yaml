@@ -66,7 +66,7 @@ Resources:
             Timeout: 880
             CodeUri: ./dist/aggregation/build-aggregated-stats
             MemorySize: 8000
-            ReservedConcurrentExecutions: 10
+            ReservedConcurrentExecutions: 1 # To avoid lock races when inserting data in DB
             Policies:
                 - AWSLambdaVPCAccessExecutionRole
                 - AmazonSESFullAccess

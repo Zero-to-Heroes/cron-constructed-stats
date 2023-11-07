@@ -134,17 +134,17 @@ const performRowsProcessing = async (connection: Connection, format: GameFormat)
 				}
 
 				rowsToProcess.push(row);
-				// if (rowsToProcess.length > 30000 && !multipartUpload.processing) {
-				// 	connection.pause();
-				// 	// console.log('before upload', rowsToProcess.length);
-				// 	const toUpload = rowsToProcess;
-				// 	rowsToProcess = [];
-				// 	// console.log('will upload', toUpload.length, 'rows');
-				// 	const uploaded = await processRows(toUpload, multipartUpload);
-				// 	rowCount += uploaded;
-				// 	console.log('processed rows', uploaded, rowCount);
-				// 	connection.resume();
-				// }
+				if (rowsToProcess.length > 50000 && !multipartUpload.processing) {
+					connection.pause();
+					// console.log('before upload', rowsToProcess.length);
+					const toUpload = rowsToProcess;
+					rowsToProcess = [];
+					// console.log('will upload', toUpload.length, 'rows');
+					const uploaded = await processRows(toUpload, multipartUpload);
+					rowCount += uploaded;
+					console.log('processed rows', uploaded, '/', toUpload.length, rowCount);
+					connection.resume();
+				}
 			})
 			.on('end', async () => {
 				console.log('end');

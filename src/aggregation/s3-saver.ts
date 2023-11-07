@@ -101,7 +101,7 @@ const saveDetailedDeckStats = async (
 	format: GameFormat,
 ): Promise<void> => {
 	const workingCopy = deckStats;
-	const chunks = chunk(workingCopy, 20);
+	const chunks = chunk(workingCopy, 100);
 
 	const mysql = await getConnection();
 	const date = new Date();

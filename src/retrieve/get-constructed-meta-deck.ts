@@ -5,11 +5,15 @@ import { Context } from 'aws-lambda';
 // URL is base/:format/:rank/:timePeriod/:deckId
 export default async (event, context: Context): Promise<any> => {
 	console.log('handling event', event);
-	const path = event.requestContext.http.path;
-	const format = path.split('/')[1];
-	const rank = path.split('/')[2];
-	const timePeriod = path.split('/')[3];
-	const deckId = decodeURIComponent(path.split('/')[4]);
+	const rawPath: string = event.rawPath;
+	const path = rawPath.startsWith('//') ? rawPath.substring(2) : rawPath.substring(1);
+	console.debug('path', path);
+	const format = path.split('/')[0];
+	const rank = path.split('/')[1];
+	const timePeriod = path.split('/')[2];
+	const encodedDeckId = path.split('/')[3];
+	const deckId = decodeURIComponent(encodedDeckId).replaceAll('/', '-');
+	console.debug('arguments', format, rank, timePeriod, deckId, path);
 	if (!format || !rank || !timePeriod || !deckId) {
 		return {
 			statusCode: 400,
