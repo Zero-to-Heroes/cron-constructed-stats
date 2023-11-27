@@ -37,6 +37,6 @@ export default async (event, context: Context): Promise<any> => {
 
 	return {
 		statusCode: 200,
-		body: result[0].deckData,
+		body: result?.[0]?.deckData,
 	};
 };

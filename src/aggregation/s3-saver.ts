@@ -1,4 +1,4 @@
-import { getConnection } from '@firestone-hs/aws-lambda-utils';
+import { getConnection, sleep } from '@firestone-hs/aws-lambda-utils';
 import { gzipSync } from 'zlib';
 import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../legacy/build-constructed-deck-stats';
 import { ArchetypeStat, ArchetypeStats, DeckStat, DeckStats, GameFormat, RankBracket, TimePeriod } from '../model';
@@ -16,10 +16,10 @@ export const persistData = async (
 	console.log('saved global archetype stats', archetypeStats.length);
 	await saveGlobalDeckStats(deckStats, rankBracket, timePeriod, format);
 	console.log('saved global deck stats', deckStats.length);
-	await saveDetailedDeckStats(deckStats, rankBracket, timePeriod, format);
-	console.log('saved detailed deck stats', deckStats.length);
 	await saveDetailedArchetypeStats(archetypeStats, rankBracket, timePeriod, format);
 	console.log('saved detailed archetype stats', archetypeStats.length);
+	await saveDetailedDeckStats(deckStats, rankBracket, timePeriod, format);
+	console.log('saved detailed deck stats', deckStats.length);
 	console.log('finished saving data');
 };
 
@@ -34,12 +34,14 @@ const saveGlobalArchetypeStats = async (
 		return;
 	}
 
-	const minimalArchetypes: readonly ArchetypeStat[] = archetypeStats.map((d) => {
-		const result: Mutable<ArchetypeStat> = { ...d };
-		delete result.cardsData;
-		delete result.matchupInfo;
-		return result;
-	});
+	const minimalArchetypes: readonly ArchetypeStat[] = archetypeStats
+		.map((d) => {
+			const result: Mutable<ArchetypeStat> = { ...d };
+			delete result.cardsData;
+			delete result.matchupInfo;
+			return result;
+		})
+		.filter((d) => d.totalGames >= 50);
 	const result: ArchetypeStats = {
 		lastUpdated: new Date(),
 		rankBracket: rankBracket,
@@ -69,12 +71,14 @@ const saveGlobalDeckStats = async (
 		return;
 	}
 
-	const minimalDecks: readonly DeckStat[] = deckStats.map((d) => {
-		const result: Mutable<DeckStat> = { ...d };
-		delete result.cardsData;
-		delete result.matchupInfo;
-		return result;
-	});
+	const minimalDecks: readonly DeckStat[] = deckStats
+		.map((d) => {
+			const result: Mutable<DeckStat> = { ...d };
+			delete result.cardsData;
+			delete result.matchupInfo;
+			return result;
+		})
+		.filter((d) => d.totalGames >= 50);
 
 	const result: DeckStats = {
 		lastUpdated: new Date(),
@@ -100,7 +104,8 @@ const saveDetailedDeckStats = async (
 	timePeriod: TimePeriod,
 	format: GameFormat,
 ): Promise<void> => {
-	const workingCopy = deckStats;
+	const workingCopy = deckStats.filter((d) => d.totalGames >= 50).sort((a, b) => b.totalGames - a.totalGames);
+	console.debug('saving detailed deck stats', workingCopy.length);
 	const chunks = chunk(workingCopy, 100);
 
 	const mysql = await getConnection();
@@ -112,19 +117,40 @@ const saveDetailedDeckStats = async (
 			const deckId = deck.decklist.replaceAll('/', '-');
 			return [date, format, rankBracket, timePeriod, deckId, JSON.stringify(deck)];
 		});
-		const query = `
-			INSERT INTO constructed_deck_stats
-			(lastUpdateDate, format, rankBracket, timePeriod, deckId, deckData)
-			VALUES ?
-			ON DUPLICATE KEY UPDATE
-			deckData = VALUES(deckData),
-			lastUpdateDate = VALUES(lastUpdateDate)
-		`;
-		// console.log('executing query', query, values);
-		await mysql.query(query, [values]);
+		await saveDecksChunk(mysql, values);
 		// break;
 	}
 	mysql.end();
+};
+
+const defaultRetries = 5;
+const saveDecksChunk = async (mysql, values: any[][], retries = defaultRetries) => {
+	while (retries > 0) {
+		try {
+			const query = `
+                INSERT INTO constructed_deck_stats
+                (lastUpdateDate, format, rankBracket, timePeriod, deckId, deckData)
+                VALUES ?
+                ON DUPLICATE KEY UPDATE
+                deckData = VALUES(deckData),
+                lastUpdateDate = VALUES(lastUpdateDate)
+            `;
+			const result = await mysql.query(query, [values]);
+			if (retries != defaultRetries) {
+				console.log('retry successful', retries);
+			}
+			return;
+		} catch (error) {
+			if (error.code === 'ER_LOCK_DEADLOCK' && retries > 0) {
+				console.log('Deadlock detected, retrying operation...', retries);
+				await sleep(1000);
+				retries--;
+			} else {
+				throw error;
+			}
+		}
+	}
+	throw new Error('Max retries exceeded');
 };
 
 const saveDetailedArchetypeStats = async (
@@ -133,7 +159,7 @@ const saveDetailedArchetypeStats = async (
 	timePeriod: TimePeriod,
 	format: GameFormat,
 ): Promise<void> => {
-	const workingCopy = archetypeStats;
+	const workingCopy = archetypeStats.filter((d) => d.totalGames >= 50);
 	const result: readonly boolean[] = await Promise.all(
 		workingCopy.map((archetype) => {
 			const gzippedResult = gzipSync(JSON.stringify(archetype));
