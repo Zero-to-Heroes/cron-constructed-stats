@@ -42,6 +42,8 @@ Resources:
             CodeUri: ./dist/daily/build-constructed-deck-stats
             MemorySize: 4000
             ReservedConcurrentExecutions: 10
+            Layers:
+                - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
             Policies:
                 - AWSLambdaVPCAccessExecutionRole
                 - AmazonSESFullAccess
@@ -49,6 +51,7 @@ Resources:
                 - AmazonSNSReadOnlyAccess
                 - AmazonS3FullAccess
                 - AWSLambda_FullAccess
+                - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
                 # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
             Tags:
                 LambdaName: cron-build-daily-constructed-deck-stats
@@ -66,7 +69,9 @@ Resources:
             Timeout: 880
             CodeUri: ./dist/aggregation/build-aggregated-stats
             MemorySize: 8000
-            ReservedConcurrentExecutions: 1 # To avoid lock races when inserting data in DB
+            ReservedConcurrentExecutions: 10 # Need to investigate locks. To avoid lock races when inserting data in DB
+            Layers:
+                - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
             Policies:
                 - AWSLambdaVPCAccessExecutionRole
                 - AmazonSESFullAccess
@@ -74,6 +79,7 @@ Resources:
                 - AmazonSNSReadOnlyAccess
                 - AmazonS3FullAccess
                 - AWSLambda_FullAccess
+                - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
                 # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
             Tags:
                 LambdaName: cron-aggregate-daily-constructed-deck-stats
@@ -91,6 +97,8 @@ Resources:
             Timeout: 5
             MemorySize: 128
             CodeUri: ./dist/retrieve/get-constructed-meta-deck
+            Layers:
+                - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
             Policies:
                 - AWSLambdaVPCAccessExecutionRole
                 - AmazonSESFullAccess
@@ -98,6 +106,7 @@ Resources:
                 - AmazonSNSReadOnlyAccess
                 - AmazonS3FullAccess
                 - AWSLambda_FullAccess
+                - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
                 # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
             Tags:
                 LambdaName: api-get-constructed-meta-deck
