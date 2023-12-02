@@ -67,7 +67,7 @@ const saveGlobalDeckStats = async (
 	format: GameFormat,
 ): Promise<void> => {
 	if (!deckStats?.length) {
-		console.error('empty archetype stats', deckStats, rankBracket, timePeriod, format);
+		console.error('empty deck stats', deckStats, rankBracket, timePeriod, format);
 		return;
 	}
 

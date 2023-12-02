@@ -60,7 +60,7 @@ Resources:
                 LastPeriodTrigger:
                     Type: Schedule
                     Properties:
-                        Schedule: cron(0 3 * * ? *)
+                        Schedule: cron(0 1 * * ? *)
     AggregateDailyConstructedDeckStats:
         Type: AWS::Serverless::Function
         Properties:

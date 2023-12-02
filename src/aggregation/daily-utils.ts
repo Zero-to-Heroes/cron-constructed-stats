@@ -18,7 +18,11 @@ export const computeDaysBackFromNow = (timePeriod: TimePeriod, patchInfo: PatchI
 			const patchReleaseDate = new Date(patchInfo.date);
 			// Add one day, so that we limit partial data
 			const patchReleaseDatePlusOneDay = new Date(patchReleaseDate.getTime() + 24 * 60 * 60 * 1000);
-			return Math.floor((Date.now() - patchReleaseDatePlusOneDay.getTime()) / (1000 * 60 * 60 * 24));
+			const daysBackForLastPatch = Math.floor(
+				(Date.now() - patchReleaseDatePlusOneDay.getTime()) / (1000 * 60 * 60 * 24),
+			);
+			console.debug('days back for last patch', daysBackForLastPatch, patchInfo);
+			return daysBackForLastPatch;
 	}
 };
 
