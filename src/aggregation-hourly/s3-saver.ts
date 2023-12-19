@@ -12,15 +12,18 @@ export const persistData = async (
 	rankBracket: RankBracket,
 	timePeriod: TimePeriod,
 	format: GameFormat,
+	shouldPersistDetailedDecks: boolean,
 ): Promise<void> => {
 	await saveGlobalArchetypeStats(archetypeStats, lastUpdate, rankBracket, timePeriod, format);
 	console.log('saved global archetype stats', archetypeStats.length);
 	await saveGlobalDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format);
 	console.log('saved global deck stats', deckStats.length);
-	await saveDetailedArchetypeStats(archetypeStats, lastUpdate, rankBracket, timePeriod, format);
-	console.log('saved detailed archetype stats', archetypeStats.length);
-	await saveDetailedDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format);
-	console.log('saved detailed deck stats', deckStats.length);
+	if (shouldPersistDetailedDecks) {
+		await saveDetailedArchetypeStats(archetypeStats, lastUpdate, rankBracket, timePeriod, format);
+		console.log('saved detailed archetype stats', archetypeStats.length);
+		await saveDetailedDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format);
+		console.log('saved detailed deck stats', deckStats.length);
+	}
 	console.log('finished saving data');
 };
 
@@ -108,7 +111,7 @@ const saveDetailedDeckStats = async (
 	timePeriod: TimePeriod,
 	format: GameFormat,
 ): Promise<void> => {
-	return;
+	// return;
 	const workingCopy = deckStats.filter((d) => d.totalGames >= 50).sort((a, b) => b.totalGames - a.totalGames);
 	console.debug('saving detailed deck stats', workingCopy.length);
 	const chunks = chunk(workingCopy, 100);
@@ -164,7 +167,7 @@ const saveDetailedArchetypeStats = async (
 	timePeriod: TimePeriod,
 	format: GameFormat,
 ): Promise<void> => {
-	return;
+	// return;
 	const workingCopy = archetypeStats.filter((d) => d.totalGames >= 50);
 	const result: readonly boolean[] = await Promise.all(
 		workingCopy.map((archetype) => {

@@ -3,11 +3,9 @@ import { AllCardsService } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { loadArchetypes } from '../archetypes';
-import { enhanceArchetypeStats } from '../daily/archetype-stats';
-import { ArchetypeStat, DeckStat, DeckStats, GameFormat, RankBracket, TimePeriod } from '../model';
+import { ArchetypeStat, DeckStat, GameFormat, RankBracket, TimePeriod } from '../model';
 import { buildArchetypeStats } from './archetypes-rebuild';
-import { buildDecksStats } from './deck-stats-rebuild';
-import { loadDailyDataDeckFromS3 as loadHourlyDataDeckFromS3 } from './s3-loader';
+import { buildDeckStatsWithoutArchetypeInfo, enhanceDeckStats } from './deck-stats-rebuild';
 import { persistData } from './s3-saver';
 
 const allCards = new AllCardsService();
@@ -34,41 +32,76 @@ export default async (event, context: Context): Promise<any> => {
 	console.log('aggregating data', format, timePeriod, rankBracket);
 	// Build the list of files based on the timeframe, and load all of these
 	const patchInfo = await getLastConstructedPatch();
-	const hourlyDeckData: readonly DeckStats[] = await loadHourlyDataDeckFromS3(
+
+	const deckStatsWithoutArchetypeInfo: readonly DeckStat[] = await buildDeckStatsWithoutArchetypeInfo(
 		format,
 		rankBracket,
 		timePeriod,
 		patchInfo,
+		allCards,
 	);
-	const lastUpdate = hourlyDeckData
-		.map((d) => ({
-			date: new Date(d.lastUpdated),
-			dateStr: d.lastUpdated,
-			time: new Date(d.lastUpdated).getTime(),
-		}))
-		.sort((a, b) => b.time - a.time)[0].date;
-	console.log('loaded hourly deck data', format, timePeriod, rankBracket, hourlyDeckData.length, lastUpdate);
 
 	const mysql = await getConnectionReadOnly();
 	const archetypes = await loadArchetypes(mysql);
 	mysql.end();
 
-	const archetypeStats: readonly ArchetypeStat[] = buildArchetypeStats(archetypes, hourlyDeckData, allCards);
+	const archetypeStats: readonly ArchetypeStat[] = buildArchetypeStats(
+		archetypes,
+		deckStatsWithoutArchetypeInfo,
+		allCards,
+	);
 	console.log(
 		'archetypeStats',
 		archetypeStats?.length,
 		archetypeStats?.map((a) => a.totalGames).reduce((a, b) => a + b, 0),
 	);
-	const deckStats: readonly DeckStat[] = buildDecksStats(hourlyDeckData, archetypeStats, allCards);
+
+	const deckStats: readonly DeckStat[] = enhanceDeckStats(deckStatsWithoutArchetypeInfo, archetypeStats, allCards);
 	console.log(
 		'deckStats',
 		deckStats?.length,
 		deckStats?.map((a) => a.totalGames).reduce((a, b) => a + b, 0),
 	);
 
-	const enhancedArchetypes = enhanceArchetypeStats(archetypeStats, deckStats);
-
-	await persistData(enhancedArchetypes, deckStats, lastUpdate, rankBracket, timePeriod, format);
+	const lastUpdateInfo = deckStats
+		.map((d) => ({
+			date: new Date(d.lastUpdate),
+			dateStr: d.lastUpdate,
+			time: new Date(d.lastUpdate).getTime(),
+		}))
+		.sort((a, b) => b.time - a.time)[0];
+	const lastUpdate = lastUpdateInfo.date;
+	if (!lastUpdate) {
+		console.error(
+			'could not find last update date',
+			deckStats.map((d) => ({
+				date: new Date(d.lastUpdate),
+				dateStr: d.lastUpdate,
+				time: new Date(d.lastUpdate).getTime(),
+			})),
+		);
+		throw new Error('could not find last update date');
+	}
+	console.log(
+		'loaded hourly deck data',
+		format,
+		timePeriod,
+		rankBracket,
+		deckStats.length,
+		lastUpdate,
+		lastUpdateInfo,
+	);
+	// Only persist detailed decks twice a day, at 00 hours and 12 hours
+	const shouldPersistDetailedDecks = new Date().getHours() % 12 === 0;
+	await persistData(
+		archetypeStats,
+		deckStats,
+		lastUpdate,
+		rankBracket,
+		timePeriod,
+		format,
+		shouldPersistDetailedDecks,
+	);
 };
 
 const dispatchFormatEvents = async (context: Context) => {

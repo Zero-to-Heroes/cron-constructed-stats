@@ -37,6 +37,7 @@ export interface DeckStat {
 	readonly playerClass: string;
 	readonly archetypeId: number;
 	readonly archetypeName: string;
+	readonly lastUpdate: Date;
 	// readonly name: string;
 	readonly decklist: string;
 	readonly rankBracket: RankBracket;

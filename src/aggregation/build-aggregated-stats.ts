@@ -22,7 +22,7 @@ export default async (event, context: Context): Promise<any> => {
 		return;
 	}
 
-	if (event.dailyProcessing && (!event.timePeriod || !event.rankBracket)) {
+	if (!event.timePeriod || !event.rankBracket) {
 		await dispatchEvents(context, event.format);
 		return;
 	}

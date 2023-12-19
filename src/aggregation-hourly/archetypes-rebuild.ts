@@ -3,17 +3,18 @@ import { AllCardsService } from '@firestone-hs/reference-data';
 import { Archetype } from '../archetypes';
 import { isOther } from '../daily/archetype-stats';
 import { CORE_CARD_THRESHOLD } from '../daily/build-constructed-deck-stats';
+import { allClasses } from '../hourly/archetype-stats';
+import { buildCardsDataForArchetype } from '../hourly/constructed-card-data';
 import { extractCardsForList } from '../hs-utils';
-import { ArchetypeStat, DeckStat, DeckStats } from '../model';
+import { ArchetypeStat, ConstructedCardData, ConstructedMatchupInfo, DeckStat } from '../model';
 import { round } from '../utils';
 
 export const buildArchetypeStats = (
 	refArchetypes: readonly Archetype[],
-	dailyDeckData: readonly DeckStats[],
+	dailyDeckData: readonly DeckStat[],
 	allCards: AllCardsService,
 ): readonly ArchetypeStat[] => {
-	const allDeckStats = dailyDeckData.flatMap((data) => data.deckStats);
-	const groupedByArchetype = groupByFunction((deckStat: DeckStat) => deckStat.archetypeId)(allDeckStats);
+	const groupedByArchetype = groupByFunction((deckStat: DeckStat) => deckStat.archetypeId)(dailyDeckData);
 	const archetypeStats: readonly ArchetypeStat[] = Object.keys(groupedByArchetype).map((archetypeId) => {
 		const archetypeDecks: readonly DeckStat[] = groupedByArchetype[archetypeId];
 		const totalGames: number = archetypeDecks.flatMap((d) => d.totalGames).reduce((a, b) => a + b, 0);
@@ -23,6 +24,8 @@ export const buildArchetypeStats = (
 		const coreCards: readonly string[] = isOther(archetype.archetype)
 			? []
 			: buildCoreCards(archetypeDecks, allCards);
+		const cardsData: readonly ConstructedCardData[] = buildCardsDataForArchetype(archetypeDecks);
+		const matchupInfo: readonly ConstructedMatchupInfo[] = buildMatchupInfoForArchetype(archetypeDecks);
 		const result: ArchetypeStat = {
 			id: +archetypeId,
 			name: archetype.archetype,
@@ -32,8 +35,8 @@ export const buildArchetypeStats = (
 			totalWins: totalWins,
 			coreCards: coreCards,
 			winrate: round(winrate),
-			cardsData: [],
-			matchupInfo: [],
+			cardsData: cardsData.filter((d) => d.inStartingDeck > totalGames / 1000),
+			matchupInfo: matchupInfo,
 		};
 		return result;
 	});
@@ -65,4 +68,19 @@ const buildCoreCards = (deck: readonly DeckStat[], allCards: AllCardsService): r
 	}
 
 	return coreCards;
+};
+
+const buildMatchupInfoForArchetype = (deckStats: readonly DeckStat[]): readonly ConstructedMatchupInfo[] => {
+	return allClasses.map((opponentClass) => {
+		const infoForClass = deckStats
+			.map((d) => d.matchupInfo.find((info) => info.opponentClass === opponentClass))
+			.filter((info) => info);
+		const result: ConstructedMatchupInfo = {
+			opponentClass: opponentClass,
+			totalGames: infoForClass.map((info) => info.totalGames).reduce((a, b) => a + b, 0),
+			wins: infoForClass.map((info) => info.wins).reduce((a, b) => a + b, 0),
+			losses: infoForClass.map((info) => info.losses).reduce((a, b) => a + b, 0),
+		};
+		return result;
+	});
 };

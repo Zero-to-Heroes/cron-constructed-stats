@@ -4,14 +4,19 @@ import { ArchetypeStats, DeckStats, GameFormat, RankBracket, TimePeriod } from '
 import { s3 } from './build-aggregated-stats';
 import { buildFileNames, computeHoursBackFromNow } from './hourly-utils';
 
+export const getFileNamesToLoad = (timePeriod: TimePeriod, patchInfo: PatchInfo): readonly string[] => {
+	const hoursBack: number = computeHoursBackFromNow(timePeriod, patchInfo);
+	const fileNames: readonly string[] = buildFileNames(hoursBack);
+	return fileNames;
+};
+
 export const loadDailyDataDeckFromS3 = async (
 	format: GameFormat,
 	rankBracket: RankBracket,
 	timePeriod: TimePeriod,
 	patchInfo: PatchInfo,
 ): Promise<readonly DeckStats[]> => {
-	const hoursBack: number = computeHoursBackFromNow(timePeriod, patchInfo);
-	const fileNames: readonly string[] = buildFileNames(hoursBack);
+	const fileNames: readonly string[] = getFileNamesToLoad(timePeriod, patchInfo);
 	console.debug('fileNames', format, rankBracket, timePeriod, fileNames);
 	const fileResults = await Promise.all(
 		fileNames.map((fileName) => loadHourlyDeckStatFromS3(format, rankBracket, fileName)),
