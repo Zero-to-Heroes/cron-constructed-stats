@@ -3,8 +3,9 @@ import { S3 as S3AWS } from 'aws-sdk';
 import SecretsManager, { GetSecretValueRequest, GetSecretValueResponse } from 'aws-sdk/clients/secretsmanager';
 import { Connection, createPool } from 'mysql';
 import { Readable } from 'stream';
+import { WORKING_ROWS_FILE } from '../common/config';
 import { ConstructedMatchStatDbRow, GameFormat } from '../model';
-import { WORKING_ROWS_FILE, s3 } from './build-constructed-deck-stats';
+import { s3 } from './build-constructed-deck-stats';
 
 export const readRowsFromS3 = async (
 	format: GameFormat,

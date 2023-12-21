@@ -70,6 +70,11 @@ const buildDeckStatsForRankBracket = (
 			try {
 				const cardVariations = buildCardVariations(decklist, archetypeStat?.coreCards ?? [], allCards);
 				const result: DeckStat = {
+					lastUpdate: deckRows
+						.filter((r) => r.creationDate)
+						.map((d) => new Date(d.creationDate))
+						.filter((date) => !isNaN(date.getTime()))
+						.sort((a, b) => b.getTime() - a.getTime())[0],
 					playerClass: deckRows[0].playerClass,
 					archetypeId: deckRows[0].playerArchetypeId,
 					archetypeName: archetypeStat?.name,

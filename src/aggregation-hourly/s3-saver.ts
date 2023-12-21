@@ -1,6 +1,6 @@
 import { getConnection, sleep } from '@firestone-hs/aws-lambda-utils';
 import { gzipSync } from 'zlib';
-import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../daily/build-constructed-deck-stats';
+import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../common/config';
 import { ArchetypeStat, ArchetypeStats, DeckStat, DeckStats, GameFormat, RankBracket, TimePeriod } from '../model';
 import { chunk } from '../utils';
 import { s3 } from './build-aggregated-stats';

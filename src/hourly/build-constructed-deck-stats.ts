@@ -13,11 +13,7 @@ import { isCorrectRank } from './constructed-match-stats';
 import { saveDeckStats } from './persist-data';
 import { readRowsFromS3, saveRowsOnS3 } from './rows';
 
-export const DECK_STATS_BUCKET = 'static.zerotoheroes.com';
-export const DECK_STATS_KEY_PREFIX = `api/constructed/stats`;
-export const WORKING_ROWS_FILE = `${DECK_STATS_KEY_PREFIX}/working/working-rows-%format%-%time%.json`;
 // export const GAMES_THRESHOLD = 50;
-export const CORE_CARD_THRESHOLD = 0.9;
 
 const allCards = new AllCardsService();
 export const s3 = new S3();

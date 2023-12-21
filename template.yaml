@@ -6,62 +6,6 @@ Description: Build constructed stats
 
 
 Resources:
-    # BuildDailyConstructedDeckStats:
-    #     Type: AWS::Serverless::Function
-    #     Properties:
-    #         Handler: daily/build-constructed-deck-stats.default
-    #         Runtime: nodejs16.x
-    #         Timeout: 880
-    #         CodeUri: ./dist/daily/build-constructed-deck-stats
-    #         MemorySize: 4000
-    #         ReservedConcurrentExecutions: 10
-    #         Layers:
-    #             - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
-    #         Policies:
-    #             - AWSLambdaVPCAccessExecutionRole
-    #             - AmazonSESFullAccess
-    #             - SecretsManagerReadWrite
-    #             - AmazonSNSReadOnlyAccess
-    #             - AmazonS3FullAccess
-    #             - AWSLambda_FullAccess
-    #             - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
-    #             # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
-    #         Tags:
-    #             LambdaName: cron-build-daily-constructed-deck-stats
-    #         Events:
-    #             # Populate the info on the last hour
-    #             LastPeriodTrigger:
-    #                 Type: Schedule
-    #                 Properties:
-    #                     Schedule: cron(0 1 * * ? *)
-    # AggregateDailyConstructedDeckStats:
-    #     Type: AWS::Serverless::Function
-    #     Properties:
-    #         Handler: aggregation/build-aggregated-stats.default
-    #         Runtime: nodejs16.x
-    #         Timeout: 880
-    #         CodeUri: ./dist/aggregation/build-aggregated-stats
-    #         MemorySize: 8000
-    #         ReservedConcurrentExecutions: 10 # Need to investigate locks. To avoid lock races when inserting data in DB
-    #         Layers:
-    #             - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
-    #         Policies:
-    #             - AWSLambdaVPCAccessExecutionRole
-    #             - AmazonSESFullAccess
-    #             - SecretsManagerReadWrite
-    #             - AmazonSNSReadOnlyAccess
-    #             - AmazonS3FullAccess
-    #             - AWSLambda_FullAccess
-    #             - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
-    #             # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
-    #         Tags:
-    #             LambdaName: cron-aggregate-daily-constructed-deck-stats
-    #         Events:
-    #             # Populate the info on the last hour
-    #             LastPeriodTrigger:
-    #                 Type: Schedule
-    #                 Properties:
-    #                     Schedule: cron(0 5 * * ? *)
     BuildHourlyConstructedDeckStats:
         Type: AWS::Serverless::Function
         Properties:
@@ -98,7 +42,7 @@ Resources:
             Runtime: nodejs16.x
             Timeout: 880
             CodeUri: ./dist/aggregation-hourly/build-aggregated-stats
-            MemorySize: 8000
+            MemorySize: 5000 # around 566k ms at 63% of 8000
             ReservedConcurrentExecutions: 10 # Need to investigate locks. To avoid lock races when inserting data in DB
             Layers:
                 - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
@@ -113,12 +57,14 @@ Resources:
                 # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
             Tags:
                 LambdaName: cron-aggregate-hourly-constructed-deck-stats
-            Events:
-                LastPeriodTrigger:
-                    Type: Schedule
-                    Properties:
-                        # Cron that runs every hour at 40 minutes past the hour
-                        Schedule: cron(40 * * * ? *)
+                #  TODO: trigger this after the hourly builds have been done, either via direct lambda invocation
+                #  or via sqs
+            # Events:
+            #     LastPeriodTrigger:
+            #         Type: Schedule
+            #         Properties:
+            #             # Cron that runs every hour at 40 minutes past the hour
+            #             Schedule: cron(40 * * * ? *)
     RetrieveConstructedDeckDetails:
         Type: AWS::Serverless::Function
         Properties:

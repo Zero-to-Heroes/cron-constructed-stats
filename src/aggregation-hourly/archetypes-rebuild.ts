@@ -1,9 +1,9 @@
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService } from '@firestone-hs/reference-data';
 import { Archetype } from '../archetypes';
-import { isOther } from '../daily/archetype-stats';
-import { CORE_CARD_THRESHOLD } from '../daily/build-constructed-deck-stats';
-import { allClasses } from '../hourly/archetype-stats';
+import { CORE_CARD_THRESHOLD } from '../common/config';
+import { allClasses } from '../common/utils';
+import { isOther } from '../hourly/archetype-stats';
 import { buildCardsDataForArchetype } from '../hourly/constructed-card-data';
 import { extractCardsForList } from '../hs-utils';
 import { ArchetypeStat, ConstructedCardData, ConstructedMatchupInfo, DeckStat } from '../model';

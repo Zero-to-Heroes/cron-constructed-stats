@@ -1,6 +1,6 @@
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService } from '@firestone-hs/reference-data';
-import { buildCardVariations } from '../daily/constructed-deck-stats';
+import { buildCardVariations } from '../hourly/constructed-deck-stats';
 import { ArchetypeStat, ArchetypeStats, DeckStat, DeckStats } from '../model';
 import { mergeCardsData, mergeMatchupInfo } from './data-aggregattion-archetype';
 
@@ -48,6 +48,10 @@ const mergeDeckStatsForDecklist = (
 	const totalWins = deckStats.map((d) => d.totalWins).reduce((a, b) => a + b, 0);
 	const cardsData = mergeCardsData(deckStats.flatMap((d) => d.cardsData));
 	const result: DeckStat = {
+		lastUpdate: deckStats
+			.map((d) => new Date(d.lastUpdate))
+			.filter((date) => !isNaN(date.getTime()))
+			.sort((a, b) => b.getTime() - a.getTime())[0],
 		decklist: deckStats[0].decklist,
 		archetypeId: deckStats[0].archetypeId,
 		archetypeName: deckStats[0].archetypeName,

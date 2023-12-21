@@ -1,5 +1,5 @@
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
-import { CORE_CARD_THRESHOLD } from '../daily/build-constructed-deck-stats';
+import { CORE_CARD_THRESHOLD } from '../common/config';
 import { ArchetypeStat, ArchetypeStats, ConstructedCardData, ConstructedMatchupInfo } from '../model';
 import { round } from '../utils';
 
