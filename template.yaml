@@ -38,10 +38,10 @@ Resources:
     AggregateHourlyConstructedDeckStats:
         Type: AWS::Serverless::Function
         Properties:
-            Handler: aggregation-hourly/build-aggregated-stats.default
+            Handler: final-stats/build-aggregated-stats.default
             Runtime: nodejs16.x
             Timeout: 880
-            CodeUri: ./dist/aggregation-hourly/build-aggregated-stats
+            CodeUri: ./dist/final-stats/build-aggregated-stats
             MemorySize: 5000 # around 566k ms at 63% of 8000
             ReservedConcurrentExecutions: 10 # Need to investigate locks. To avoid lock races when inserting data in DB
             Layers:
