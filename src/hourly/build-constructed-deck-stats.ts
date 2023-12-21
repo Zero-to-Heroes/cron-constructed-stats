@@ -1,13 +1,11 @@
 // This example demonstrates a NodeJS 8.10 async handler[1], however of course you could use
 // the more traditional callback-style handler.
 
-import { S3, getConnectionReadOnly, sleep } from '@firestone-hs/aws-lambda-utils';
+import { S3, sleep } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
 import AWS from 'aws-sdk';
-import { loadArchetypes } from '../archetypes';
 import { ConstructedMatchStatDbRow, DeckStat, GameFormat, RankBracket } from '../model';
-import { buildArchetypes, enhanceArchetypeStats } from './archetype-stats';
 import { buildDeckStats } from './constructed-deck-stats';
 import { isCorrectRank } from './constructed-match-stats';
 import { saveDeckStats } from './persist-data';
@@ -52,22 +50,22 @@ export default async (event, context: Context): Promise<any> => {
 	const allRows: readonly ConstructedMatchStatDbRow[] = await readRowsFromS3(format, startDate);
 	const rows = allRows.filter((r) => r.format === format);
 	console.log('\t', 'loaded rows', rows.length);
-	const mysql = await getConnectionReadOnly();
-	const archetypes = await loadArchetypes(mysql);
-	mysql.end();
-	console.log('\t', 'loaded archetypes', archetypes.length);
+	// const mysql = await getConnectionReadOnly();
+	// const archetypes = await loadArchetypes(mysql);
+	// mysql.end();
+	// console.log('\t', 'loaded archetypes', archetypes.length);
 	const relevantRows = rows.filter((r) => isCorrectRank(r, rankBracket));
 	console.log('\t', 'relevantRows', relevantRows.length, rankBracket);
 	const lastGameDate = relevantRows
 		.map((r) => new Date(r.creationDate))
 		.sort()
 		.reverse()[0];
-	const archetypeStats = buildArchetypes(relevantRows, archetypes, format, allCards);
-	console.log('\t', 'built archetype stats', archetypeStats.length);
-	const deckStats: readonly DeckStat[] = buildDeckStats(relevantRows, rankBracket, format, archetypeStats, allCards);
-	const enhancedArchetypes = enhanceArchetypeStats(archetypeStats, deckStats);
+	// const archetypeStats = buildArchetypes(relevantRows, archetypes, format, allCards);
+	// console.log('\t', 'built archetype stats', archetypeStats.length);
+	const deckStats: readonly DeckStat[] = buildDeckStats(relevantRows, rankBracket, format, allCards);
+	// const enhancedArchetypes = enhanceArchetypeStats(, deckStats);
 	console.log('\t', 'built deck stats', deckStats.length);
-	await saveDeckStats(deckStats, enhancedArchetypes, lastGameDate, rankBracket, format, startDate);
+	await saveDeckStats(deckStats, lastGameDate, rankBracket, format, startDate);
 
 	return { statusCode: 200, body: null };
 };

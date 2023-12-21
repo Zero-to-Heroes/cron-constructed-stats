@@ -2,31 +2,24 @@ import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService } from '@firestone-hs/reference-data';
 import { allClasses } from '../common/utils';
 import { extractCardsForList } from '../hs-utils';
-import {
-	ArchetypeStat,
-	ConstructedMatchStatDbRow,
-	ConstructedMatchupInfo,
-	DeckStat,
-	GameFormat,
-	RankBracket,
-} from '../model';
+import { ConstructedMatchStatDbRow, ConstructedMatchupInfo, DeckStat, GameFormat, RankBracket } from '../model';
 import { buildCardsDataForDeck } from './constructed-card-data';
 
 export const buildDeckStats = (
 	rows: readonly ConstructedMatchStatDbRow[],
 	rankBracket: RankBracket,
 	format: GameFormat,
-	archetypes: readonly ArchetypeStat[],
+	// archetypes: readonly ArchetypeStat[],
 	allCards: AllCardsService,
 ): readonly DeckStat[] => {
-	return buildDeckStatsForRankBracket(rows, rankBracket, format, archetypes, allCards);
+	return buildDeckStatsForRankBracket(rows, rankBracket, format, allCards);
 };
 
 const buildDeckStatsForRankBracket = (
 	rows: readonly ConstructedMatchStatDbRow[],
 	rankBracket: RankBracket,
 	format: GameFormat,
-	archetypes: readonly ArchetypeStat[],
+	// archetypes: readonly ArchetypeStat[],
 	allCards: AllCardsService,
 ): readonly DeckStat[] => {
 	const groupedByDeck = groupByFunction((row: ConstructedMatchStatDbRow) => row.playerDecklist)(rows);
@@ -64,11 +57,11 @@ const buildDeckStatsForRankBracket = (
 			const totalGames: number = deckRows.length;
 			const totalWins: number = deckRows.filter((row) => row.result === 'won').length;
 			const winrate: number = totalWins / totalGames;
-			const archetypeStat = archetypes.find((arch) => arch.id === deckRows[0].playerArchetypeId);
+			// const archetypeStat = archetypes.find((arch) => arch.id === deckRows[0].playerArchetypeId);
 			const cardsData = buildCardsDataForDeck(deckRows);
 			const matchupInfo = buildMatchupInfoForDeck(deckRows);
 			try {
-				const cardVariations = buildCardVariations(decklist, archetypeStat?.coreCards ?? [], allCards);
+				// const cardVariations = buildCardVariations(decklist, archetypeStat?.coreCards ?? [], allCards);
 				const result: DeckStat = {
 					lastUpdate: deckRows
 						.filter((r) => r.creationDate)
@@ -77,7 +70,7 @@ const buildDeckStatsForRankBracket = (
 						.sort((a, b) => b.getTime() - a.getTime())[0],
 					playerClass: deckRows[0].playerClass,
 					archetypeId: deckRows[0].playerArchetypeId,
-					archetypeName: archetypeStat?.name,
+					// archetypeName: archetypeStat?.name,
 					// name: deckRows[0].playerDecklist,
 					decklist: deckRows[0].playerDecklist,
 					rankBracket: rankBracket,
@@ -86,11 +79,11 @@ const buildDeckStatsForRankBracket = (
 					totalGames: totalGames,
 					totalWins: totalWins,
 					winrate: null,
-					cardVariations: cardVariations,
-					archetypeCoreCards: archetypeStat?.coreCards,
+					// cardVariations: cardVariations,
+					// archetypeCoreCards: archetypeStat?.coreCards,
 					cardsData: cardsData,
 					matchupInfo: matchupInfo,
-				};
+				} as DeckStat;
 				deckRows = null;
 				return result;
 			} catch (e) {

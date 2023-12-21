@@ -15,11 +15,11 @@ export const getFileKeysToLoad = (
 	// - if we're looking at the "last-patch" filter, we load the correct hourly data
 	// for the patch day
 	const currentDayHourlyKeys = getHourlyKeysForCurrentDay(format, rankBracket);
-	console.debug('currentDayHourlyKeys', currentDayHourlyKeys);
+	// console.debug('currentDayHourlyKeys', currentDayHourlyKeys);
 	const previousDaysDailyKeys = getDailyKeysForPreviousDays(format, rankBracket, timePeriod, patchInfo);
-	console.debug('previousDaysDailyKeys', previousDaysDailyKeys);
+	// console.debug('previousDaysDailyKeys', previousDaysDailyKeys);
 	const patchDayHourlyKeys = getHourlyKeysForPatchDay(format, rankBracket, timePeriod, patchInfo);
-	console.debug('patchDayHourlyKeys', patchDayHourlyKeys);
+	// console.debug('patchDayHourlyKeys', patchDayHourlyKeys);
 	return [...currentDayHourlyKeys, ...previousDaysDailyKeys, ...patchDayHourlyKeys];
 };
 
@@ -84,7 +84,7 @@ const getHourlyKeysForCurrentDay = (format: GameFormat, rankBracket: RankBracket
 	// until we get to 00:00 00:00.000 of the current day
 	const now = new Date();
 	const keys: string[] = [];
-	for (let i = 0; i < now.getHours(); i++) {
+	for (let i = 0; i < now.getHours() + 1; i++) {
 		const date = new Date(now.getTime() - i * 60 * 60 * 1000);
 		date.setMinutes(0);
 		date.setSeconds(0);
@@ -122,4 +122,5 @@ const getHourlyKeysForPatchDay = (
 		const dateStr = date.toISOString();
 		keys.push(`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/hourly/${dateStr}.gz.json`);
 	}
+	return keys;
 };

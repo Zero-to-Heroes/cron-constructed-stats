@@ -46,13 +46,14 @@ export interface DeckStat {
 	readonly totalGames: number;
 	readonly totalWins: number;
 	readonly winrate: number;
+	readonly cardsData: readonly ConstructedCardData[];
+	readonly matchupInfo: readonly ConstructedMatchupInfo[];
+	// Archetype stuff
 	readonly cardVariations: {
 		readonly added: readonly string[];
 		readonly removed: readonly string[];
 	};
 	readonly archetypeCoreCards?: readonly string[];
-	readonly cardsData: readonly ConstructedCardData[];
-	readonly matchupInfo: readonly ConstructedMatchupInfo[];
 }
 
 export interface ConstructedCardData {
@@ -71,11 +72,11 @@ export interface ConstructedCardData {
 }
 
 export interface ConstructedMatchupInfo {
-	readonly opponentClass: string;
-	readonly opponentArchetypeId?: number;
-	readonly totalGames: number;
-	readonly wins: number;
-	readonly losses: number;
+	opponentClass: string;
+	opponentArchetypeId?: number;
+	totalGames: number;
+	wins: number;
+	losses: number;
 }
 
 export interface ArchetypeStat {

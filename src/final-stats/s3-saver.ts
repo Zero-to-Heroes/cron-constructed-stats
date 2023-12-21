@@ -1,3 +1,4 @@
+/* eslint-disable no-async-promise-executor */
 import { getConnection, sleep } from '@firestone-hs/aws-lambda-utils';
 import { gzipSync } from 'zlib';
 import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../common/config';
@@ -18,12 +19,12 @@ export const persistData = async (
 	console.log('saved global archetype stats', archetypeStats.length);
 	await saveGlobalDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format);
 	console.log('saved global deck stats', deckStats.length);
-	if (shouldPersistDetailedDecks) {
-		await saveDetailedArchetypeStats(archetypeStats, lastUpdate, rankBracket, timePeriod, format);
-		console.log('saved detailed archetype stats', archetypeStats.length);
-		await saveDetailedDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format);
-		console.log('saved detailed deck stats', deckStats.length);
-	}
+	// if (shouldPersistDetailedDecks) {
+	await saveDetailedArchetypeStats(archetypeStats, lastUpdate, rankBracket, timePeriod, format);
+	console.log('saved detailed archetype stats', archetypeStats.length);
+	await saveDetailedDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format);
+	console.log('saved detailed deck stats', deckStats.length);
+	// }
 	console.log('finished saving data');
 };
 
@@ -114,24 +115,57 @@ const saveDetailedDeckStats = async (
 	// return;
 	const workingCopy = deckStats.filter((d) => d.totalGames >= 50).sort((a, b) => b.totalGames - a.totalGames);
 	console.debug('saving detailed deck stats', workingCopy.length);
-	const chunks = chunk(workingCopy, 100);
+	const chunks = chunk(workingCopy, 60);
 
 	const mysql = await getConnection();
 	// Try to insert based on format, rankBracket, timePeriod and if it exists, update
 	// the existing row
 	for (const chunk of chunks) {
-		const values = chunk.map((deck) => {
-			const deckId = deck.decklist.replaceAll('/', '-');
-			return [lastUpdate, format, rankBracket, timePeriod, deckId, JSON.stringify(deck)];
-		});
-		await saveDecksChunk(mysql, values);
+		await saveDeckChunk(mysql, chunk, lastUpdate, rankBracket, timePeriod, format);
 		// break;
 	}
 	mysql.end();
 };
 
+const saveDeckChunk = async (
+	mysql,
+	chunk: readonly DeckStat[],
+	lastUpdate: Date,
+	rankBracket: RankBracket,
+	timePeriod: TimePeriod,
+	format: GameFormat,
+) => {
+	console.debug('saving decks chunk', chunk.length);
+	const values = chunk.map((deck) => {
+		const deckId = deck.decklist.replaceAll('/', '-');
+		return [lastUpdate, format, rankBracket, timePeriod, deckId, JSON.stringify(deck)];
+	});
+	try {
+		await saveDecksChunkInternal(mysql, values);
+		// console.debug('chunk saved');
+	} catch (error) {
+		if (error.code === 'ER_NET_PACKET_TOO_LARGE') {
+			console.log('ER_NET_PACKET_TOO_LARGE detected, splitting chunk', chunk.length);
+			const splitFactor = 2;
+			// Split the chunk array into "splitFactor" chunks of similar size
+			const splitChunks = chunk.reduce((result, value, index, array) => {
+				const chunkIndex = Math.floor(index / (array.length / splitFactor));
+				if (!result[chunkIndex]) {
+					result[chunkIndex] = []; // start a new chunk
+				}
+				result[chunkIndex].push(value);
+				return result;
+			}, []);
+			// console.log('split chunk', splitChunks.length);
+			for (const splitChunk of splitChunks) {
+				await saveDeckChunk(mysql, splitChunk, lastUpdate, rankBracket, timePeriod, format);
+			}
+		}
+	}
+};
+
 const defaultRetries = 5;
-const saveDecksChunk = async (mysql, values: any[][], retries = defaultRetries) => {
+const saveDecksChunkInternal = async (mysql, values: any[][], retries = defaultRetries) => {
 	while (retries > 0) {
 		try {
 			const query = `

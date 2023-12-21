@@ -69,9 +69,9 @@ Resources:
         Properties:
             Handler: final-stats/build-aggregated-stats.default
             Runtime: nodejs16.x
-            Timeout: 880
+            Timeout: 300
             CodeUri: ./dist/final-stats/build-aggregated-stats
-            MemorySize: 5000 # around 566k ms at 63% of 8000
+            MemorySize: 10000 
             ReservedConcurrentExecutions: 10 # Need to investigate locks. To avoid lock races when inserting data in DB
             Layers:
                 - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
@@ -88,12 +88,22 @@ Resources:
                 LambdaName: cron-aggregate-hourly-constructed-deck-stats
                 #  TODO: trigger this after the hourly builds have been done, either via direct lambda invocation
                 #  or via sqs
-            # Events:
-            #     LastPeriodTrigger:
-            #         Type: Schedule
-            #         Properties:
-            #             # Cron that runs every hour at 40 minutes past the hour
-            #             Schedule: cron(40 * * * ? *)
+            Events:
+                LastPeriodTrigger:
+                    Type: Schedule
+                    Properties:
+                        # Cron that runs every hour at 40 minutes past the hour
+                        Schedule: cron(40 * * * ? *)
+    AggregateHourlyConstructedDeckStatsVersion:
+        Type: AWS::Lambda::Version
+        Properties:
+            FunctionName: !Ref AggregateHourlyConstructedDeckStats
+    AggregateHourlyConstructedDeckStatsAsyncConfig:
+        Type: AWS::Lambda::EventInvokeConfig
+        Properties:
+            FunctionName: !Ref AggregateHourlyConstructedDeckStats
+            MaximumRetryAttempts: 0
+            Qualifier: !GetAtt AggregateHourlyConstructedDeckStatsVersion.Version
     RetrieveConstructedDeckDetails:
         Type: AWS::Serverless::Function
         Properties:

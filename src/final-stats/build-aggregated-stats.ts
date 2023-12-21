@@ -30,9 +30,8 @@ export default async (event, context: Context): Promise<any> => {
 	const rankBracket: RankBracket = event.rankBracket;
 
 	console.log('aggregating data', format, timePeriod, rankBracket);
-	// Build the list of files based on the timeframe, and load all of these
 	const patchInfo = await getLastConstructedPatch();
-
+	// console.log('memory before buildDeckStatsWithoutArchetypeInfo', formatMemoryUsage(process.memoryUsage()));
 	const deckStatsWithoutArchetypeInfo: readonly DeckStat[] = await buildDeckStatsWithoutArchetypeInfo(
 		format,
 		rankBracket,
@@ -40,35 +39,68 @@ export default async (event, context: Context): Promise<any> => {
 		patchInfo,
 		allCards,
 	);
+	console.log(
+		'deckStatsWithoutArchetypeInfo',
+		deckStatsWithoutArchetypeInfo?.length,
+		deckStatsWithoutArchetypeInfo?.map((a) => a.totalGames).reduce((a, b) => a + b, 0),
+	);
 
+	console.time('archetypesSql');
 	const mysql = await getConnectionReadOnly();
 	const archetypes = await loadArchetypes(mysql);
 	mysql.end();
+	console.timeEnd('archetypesSql');
 
+	console.time('archetypeStats');
+	// console.log('memory before buildArchetypeStats', formatMemoryUsage(process.memoryUsage()));
 	const archetypeStats: readonly ArchetypeStat[] = buildArchetypeStats(
 		archetypes,
 		deckStatsWithoutArchetypeInfo,
 		allCards,
 	);
+	console.timeEnd('archetypeStats');
 	console.log(
 		'archetypeStats',
 		archetypeStats?.length,
+		archetypes?.length,
 		archetypeStats?.map((a) => a.totalGames).reduce((a, b) => a + b, 0),
 	);
 
+	console.time('deckStats');
+	// console.log('memory before enhanceDeckStats', formatMemoryUsage(process.memoryUsage()));
 	const deckStats: readonly DeckStat[] = enhanceDeckStats(deckStatsWithoutArchetypeInfo, archetypeStats, allCards);
+	console.timeEnd('deckStats');
 	console.log(
 		'deckStats',
 		deckStats?.length,
 		deckStats?.map((a) => a.totalGames).reduce((a, b) => a + b, 0),
 	);
 
+	const lastUpdate = getLastUpdate(deckStats);
+
+	// Only persist detailed decks twice a day, at 00 hours and 12 hours
+	console.time('persistData');
+	const shouldPersistDetailedDecks = new Date().getHours() % 12 === 0;
+	await persistData(
+		archetypeStats,
+		deckStats,
+		lastUpdate,
+		rankBracket,
+		timePeriod,
+		format,
+		shouldPersistDetailedDecks,
+	);
+	console.timeEnd('persistData');
+};
+
+const getLastUpdate = (deckStats: readonly DeckStat[]): Date => {
 	const lastUpdateInfo = deckStats
 		.map((d) => ({
 			date: new Date(d.lastUpdate),
 			dateStr: d.lastUpdate,
 			time: new Date(d.lastUpdate).getTime(),
 		}))
+		.filter((date) => !isNaN(date.time))
 		.sort((a, b) => b.time - a.time)[0];
 	const lastUpdate = lastUpdateInfo.date;
 	if (!lastUpdate) {
@@ -82,26 +114,8 @@ export default async (event, context: Context): Promise<any> => {
 		);
 		throw new Error('could not find last update date');
 	}
-	console.log(
-		'loaded hourly deck data',
-		format,
-		timePeriod,
-		rankBracket,
-		deckStats.length,
-		lastUpdate,
-		lastUpdateInfo,
-	);
-	// Only persist detailed decks twice a day, at 00 hours and 12 hours
-	const shouldPersistDetailedDecks = new Date().getHours() % 12 === 0;
-	await persistData(
-		archetypeStats,
-		deckStats,
-		lastUpdate,
-		rankBracket,
-		timePeriod,
-		format,
-		shouldPersistDetailedDecks,
-	);
+	console.log('loaded hourly deck data', deckStats.length, lastUpdate, lastUpdateInfo);
+	return lastUpdate;
 };
 
 const dispatchFormatEvents = async (context: Context) => {
@@ -119,16 +133,9 @@ const dispatchFormatEvents = async (context: Context) => {
 			LogType: 'Tail',
 			Payload: JSON.stringify(newEvent),
 		};
-		console.log('\tinvoking lambda', params);
-		const result = await lambda
-			.invoke({
-				FunctionName: context.functionName,
-				InvocationType: 'Event',
-				LogType: 'Tail',
-				Payload: JSON.stringify(newEvent),
-			})
-			.promise();
-		console.log('\tinvocation result', result);
+		// console.log('\tinvoking lambda', params);
+		const result = await lambda.invoke(params).promise();
+		// console.log('\tinvocation result', result);
 		await sleep(50);
 	}
 };
@@ -149,6 +156,7 @@ const dispatchEvents = async (context: Context, format: GameFormat) => {
 	const allRankBracket: readonly RankBracket[] = ['all'];
 	for (const timePeriod of allTimePeriod) {
 		for (const rankBracket of allRankBracket) {
+			console.log('dispatching events for timePeriod and rank', timePeriod, rankBracket);
 			const newEvent = {
 				dailyProcessing: true,
 				timePeriod: timePeriod,
@@ -161,16 +169,9 @@ const dispatchEvents = async (context: Context, format: GameFormat) => {
 				LogType: 'Tail',
 				Payload: JSON.stringify(newEvent),
 			};
-			console.log('\tinvoking lambda', params);
-			const result = await lambda
-				.invoke({
-					FunctionName: context.functionName,
-					InvocationType: 'Event',
-					LogType: 'Tail',
-					Payload: JSON.stringify(newEvent),
-				})
-				.promise();
-			console.log('\tinvocation result', result);
+			// console.log('\tinvoking lambda', params);
+			const result = await lambda.invoke(params).promise();
+			// console.log('\tinvocation result', result);
 			await sleep(50);
 		}
 	}

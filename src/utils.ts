@@ -35,3 +35,7 @@ export const chunk = <T>(array: readonly T[], size: number): readonly T[][] =>
 		}
 		return acc;
 	}, [] as T[][]);
+
+export type Mutable<T> = {
+	-readonly [P in keyof T]: T[P];
+};
