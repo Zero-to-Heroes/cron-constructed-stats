@@ -1,5 +1,6 @@
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService } from '@firestone-hs/reference-data';
+import { allClasses } from '../common/utils';
 import { extractCardsForList } from '../hs-utils';
 import {
 	ArchetypeStat,
@@ -9,7 +10,6 @@ import {
 	GameFormat,
 	RankBracket,
 } from '../model';
-import { allClasses } from './archetype-stats';
 import { buildCardsDataForDeck } from './constructed-card-data';
 
 export const buildDeckStats = (

@@ -1,6 +1,8 @@
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
+import { mergeCardsData } from '../common/cards';
 import { CORE_CARD_THRESHOLD } from '../common/config';
-import { ArchetypeStat, ArchetypeStats, ConstructedCardData, ConstructedMatchupInfo } from '../model';
+import { mergeMatchupInfo } from '../common/matchup';
+import { ArchetypeStat, ArchetypeStats, ConstructedCardData } from '../model';
 import { round } from '../utils';
 
 export const aggregateArchetypeData = (dailyData: readonly ArchetypeStats[]): ArchetypeStats => {
@@ -35,42 +37,6 @@ const mergeArchetypeStatsForArchetype = (archetypeStats: readonly ArchetypeStat[
 		cardsData: cardsData,
 		matchupInfo: mergeMatchupInfo(archetypeStats.flatMap((d) => d.matchupInfo)),
 		coreCards: buildCoreCards(cardsData, totalGames),
-	};
-	return result;
-};
-
-export const mergeCardsData = (cardsData: readonly ConstructedCardData[]): readonly ConstructedCardData[] => {
-	const groupedByCardId = groupByFunction((a: ConstructedCardData) => a.cardId)(cardsData);
-	return Object.values(groupedByCardId).map((group) => mergeCardData(group));
-};
-
-const mergeCardData = (cardsData: readonly ConstructedCardData[]): ConstructedCardData => {
-	const result: ConstructedCardData = {
-		cardId: cardsData[0].cardId,
-		inStartingDeck: cardsData.map((d) => d.inStartingDeck).reduce((a, b) => a + b, 0),
-		wins: cardsData.map((d) => d.wins).reduce((a, b) => a + b, 0),
-		drawnBeforeMulligan: cardsData.map((d) => d.drawnBeforeMulligan).reduce((a, b) => a + b, 0),
-		keptInMulligan: cardsData.map((d) => d.keptInMulligan).reduce((a, b) => a + b, 0),
-		inHandAfterMulligan: cardsData.map((d) => d.inHandAfterMulligan).reduce((a, b) => a + b, 0),
-		inHandAfterMulliganThenWin: cardsData.map((d) => d.inHandAfterMulliganThenWin).reduce((a, b) => a + b, 0),
-		drawn: cardsData.map((d) => d.drawn).reduce((a, b) => a + b, 0),
-		drawnThenWin: cardsData.map((d) => d.drawnThenWin).reduce((a, b) => a + b, 0),
-	};
-	return result;
-};
-
-export const mergeMatchupInfo = (matchupInfo: readonly ConstructedMatchupInfo[]): readonly ConstructedMatchupInfo[] => {
-	const groupedByOpponent = groupByFunction((a: ConstructedMatchupInfo) => a.opponentClass)(matchupInfo);
-	return Object.values(groupedByOpponent).map((group) => mergeMatchupInfoForOpponent(group));
-};
-
-const mergeMatchupInfoForOpponent = (matchupInfo: readonly ConstructedMatchupInfo[]): ConstructedMatchupInfo => {
-	const result: ConstructedMatchupInfo = {
-		opponentClass: matchupInfo[0].opponentClass,
-		opponentArchetypeId: matchupInfo[0].opponentArchetypeId,
-		totalGames: matchupInfo.map((d) => d.totalGames).reduce((a, b) => a + b, 0),
-		wins: matchupInfo.map((d) => d.wins).reduce((a, b) => a + b, 0),
-		losses: matchupInfo.map((d) => d.losses).reduce((a, b) => a + b, 0),
 	};
 	return result;
 };

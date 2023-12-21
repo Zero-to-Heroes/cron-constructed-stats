@@ -1,34 +1,8 @@
 import { PatchInfo } from '@firestone-hs/aws-lambda-utils';
 import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../common/config';
+import { buildFileNames, computeHoursBackFromNow } from '../common/utils';
 import { ArchetypeStats, DeckStats, GameFormat, RankBracket, TimePeriod } from '../model';
 import { s3 } from './build-aggregated-stats';
-import { buildFileNames, computeHoursBackFromNow } from './hourly-utils';
-
-export const getFileNamesToLoad = (timePeriod: TimePeriod, patchInfo: PatchInfo): readonly string[] => {
-	const hoursBack: number = computeHoursBackFromNow(timePeriod, patchInfo);
-	const fileNames: readonly string[] = buildFileNames(hoursBack);
-	return fileNames;
-};
-
-// export const loadDailyDataDeckFromS3 = async (
-// 	format: GameFormat,
-// 	rankBracket: RankBracket,
-// 	timePeriod: TimePeriod,
-// 	patchInfo: PatchInfo,
-// ): Promise<readonly DeckStats[]> => {
-// 	const fileNames: readonly string[] = getFileNamesToLoad(timePeriod, patchInfo);
-// 	const start = Date.now();
-// 	console.debug('fileNames', format, rankBracket, timePeriod, fileNames.length);
-// 	const fileResults = await Promise.all(
-// 		fileNames.map((fileName) => loadHourlyDeckStatFromS3(format, rankBracket, fileName)),
-// 	);
-// 	console.debug('finished reading s3 content', Date.now() - start);
-// 	// const gzipContent = await Promise.all(
-// 	// 	fileNames.map((fileName) => loadHourlyDeckStatFromS3Gzip(format, rankBracket, fileName)),
-// 	// );
-// 	// const fileResults = gzipContent.map((content) => JSON.parse(content));
-// 	return fileResults.filter((result) => !!result);
-// };
 
 export const loadHourlyDeckStatFromS3 = async (
 	format: GameFormat,

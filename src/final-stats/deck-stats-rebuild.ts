@@ -1,9 +1,11 @@
 import { AllCardsService } from '@firestone-hs/reference-data';
+import { mergeCardsData } from '../common/cards';
+import { DECK_STATS_BUCKET } from '../common/config';
+import { mergeMatchupInfo } from '../common/matchup';
 import { buildCardVariations } from '../hourly/constructed-deck-stats';
 import { ArchetypeStat, DeckStat, GameFormat, RankBracket, TimePeriod } from '../model';
-import { chunk } from '../utils';
-import { mergeCardsData, mergeMatchupInfo } from './data-aggregattion-archetype';
-import { getFileNamesToLoad, loadRawHourlyDeckStatFromS3 } from './s3-loader';
+import { s3 } from './build-aggregated-stats';
+import { getFileKeysToLoad } from './file-keys';
 
 export const buildDeckStatsWithoutArchetypeInfo = async (
 	format: GameFormat,
@@ -12,29 +14,20 @@ export const buildDeckStatsWithoutArchetypeInfo = async (
 	patchInfo: any,
 	allCards: AllCardsService,
 ): Promise<readonly DeckStat[]> => {
-	// Here, let's try to load files one by one, and merge them as they arrive, so we limit the total
-	// memory footprint
-	const fileNames = getFileNamesToLoad(timePeriod, patchInfo);
-	const tempResult: { [decklist: string]: DeckStat } = {};
-	const chunkSize = 30;
-	const chunks = chunk(fileNames, chunkSize);
+	const start = Date.now();
+	const fileKeys = getFileKeysToLoad(format, rankBracket, timePeriod, patchInfo);
+	const rawData = await Promise.all(
+		fileKeys.map((fileKey) => s3.readGzipContent(DECK_STATS_BUCKET, fileKey, 1, false, 300)),
+	);
+	console.debug('loaded raw data', Date.now() - start, fileKeys.length);
+	const data = rawData.map((data) => JSON.parse(data));
+	console.debug('loaded data', Date.now() - start, fileKeys.length);
 
-	for (const fileNames of chunks) {
-		const start = Date.now();
-		// const hourlyData = await Promise.all(
-		// 	fileNames.map((fileName) => loadHourlyDeckStatFromS3(format, rankBracket, fileName)),
-		// );
-		const hourlyRawData = await Promise.all(
-			fileNames.map((fileName) => loadRawHourlyDeckStatFromS3(format, rankBracket, fileName)),
-		);
-		console.debug('loaded hourly raw data', Date.now() - start, fileNames.length);
-		const hourlyData = hourlyRawData.map((data) => JSON.parse(data));
-		console.debug('loaded hourly data', Date.now() - start, fileNames.length);
-		mergeDeckStatsData(
-			tempResult,
-			hourlyData?.flatMap((d) => d?.deckStats ?? []),
-		);
-	}
+	const tempResult: { [decklist: string]: DeckStat } = {};
+	mergeDeckStatsData(
+		tempResult,
+		data?.flatMap((d) => d?.deckStats ?? []),
+	);
 	return Object.values(tempResult);
 };
 

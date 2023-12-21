@@ -1,7 +1,7 @@
 import { S3 } from '@firestone-hs/aws-lambda-utils';
 import { gzipSync } from 'zlib';
+import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../common/config';
 import { ArchetypeStat, ArchetypeStats, DeckStat, DeckStats, GameFormat, RankBracket } from '../model';
-import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from './build-constructed-deck-stats';
 
 export const saveDeckStats = async (
 	deckStats: readonly DeckStat[],
