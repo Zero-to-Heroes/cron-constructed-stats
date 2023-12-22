@@ -35,7 +35,7 @@ export const buildDeckStatsWithoutArchetypeInfo = async (
 
 	// console.log('memory after sortedData', formatMemoryUsage(process.memoryUsage()));
 	console.time('merge-data');
-	const result: readonly DeckStat[] = mergeDeckStatsData(deckStats);
+	const result: readonly DeckStat[] = mergeDeckStatsData(deckStats, timePeriod);
 	deckStats = null;
 	console.timeEnd('merge-data');
 	return result;
@@ -50,6 +50,7 @@ export const enhanceDeckStats = (
 		const archetype = archetypeData.find((a) => a.id === deck.archetypeId);
 		return {
 			...deck,
+			archetypeName: archetype.name,
 			cardVariations: buildCardVariations(deck.decklist, archetype.coreCards, allCards),
 			archetypeCoreCards: archetype.coreCards,
 		};

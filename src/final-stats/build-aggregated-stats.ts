@@ -43,6 +43,7 @@ export default async (event, context: Context): Promise<any> => {
 		'deckStatsWithoutArchetypeInfo',
 		deckStatsWithoutArchetypeInfo?.length,
 		deckStatsWithoutArchetypeInfo?.map((a) => a.totalGames).reduce((a, b) => a + b, 0),
+		deckStatsWithoutArchetypeInfo[0],
 	);
 
 	console.time('archetypesSql');
@@ -143,7 +144,7 @@ const dispatchFormatEvents = async (context: Context) => {
 const dispatchEvents = async (context: Context, format: GameFormat) => {
 	// console.log('dispatching events');
 	const allTimePeriod: readonly TimePeriod[] = ['last-patch', 'past-20', 'past-7', 'past-3', 'current-season'];
-	// const allTimePeriod: readonly TimePeriod[] = ['past-20'];
+	// const allTimePeriod: readonly TimePeriod[] = ['last-patch'];
 	const allRankBracket: readonly RankBracket[] = [
 		'top-2000-legend',
 		'legend',
@@ -153,7 +154,7 @@ const dispatchEvents = async (context: Context, format: GameFormat) => {
 		'bronze-gold',
 		'all',
 	];
-	// const allRankBracket: readonnly RankBracket[] = ['all'];
+	// const allRankBracket: readonly RankBracket[] = ['top-2000-legend'];
 	for (const timePeriod of allTimePeriod) {
 		for (const rankBracket of allRankBracket) {
 			console.log('dispatching events for timePeriod and rank', timePeriod, rankBracket);

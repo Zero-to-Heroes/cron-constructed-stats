@@ -1,9 +1,9 @@
-import { ConstructedCardData, ConstructedMatchupInfo, DeckStat } from '../model';
-import { Mutable } from '../utils';
+import { ConstructedCardData, ConstructedMatchupInfo, DeckStat, TimePeriod } from '../model';
+import { Mutable, round } from '../utils';
 import { mergeCardsData } from './cards';
 import { mergeMatchupInfo } from './matchup';
 
-export const mergeDeckStatsData = (sortedData: DeckStat[]): DeckStat[] => {
+export const mergeDeckStatsData = (sortedData: DeckStat[], timePeriod: TimePeriod): DeckStat[] => {
 	if (!sortedData?.length) {
 		return [];
 	}
@@ -31,6 +31,8 @@ export const mergeDeckStatsData = (sortedData: DeckStat[]): DeckStat[] => {
 			if (currentStat !== null) {
 				currentStat.cardsData = mergeCardsData(cardsData);
 				currentStat.matchupInfo = mergeMatchupInfo(matchupInfo);
+				currentStat.winrate =
+					currentStat.totalGames === 0 ? null : 100 * round(currentStat.totalWins / currentStat.totalGames);
 				result.push(currentStat);
 				// if (decksProcessed % 5000 === 0) {
 				// 	console.log(
@@ -45,20 +47,20 @@ export const mergeDeckStatsData = (sortedData: DeckStat[]): DeckStat[] => {
 			}
 			currentStat = {
 				archetypeId: stat.archetypeId,
-				archetypeName: null,
 				decklist: stat.decklist,
 				format: stat.format,
 				lastUpdate: stat.lastUpdate == null ? null : new Date(stat.lastUpdate),
 				playerClass: stat.playerClass,
 				rankBracket: stat.rankBracket,
-				cardsData: [],
-				matchupInfo: [],
-				timePeriod: stat.timePeriod,
+				timePeriod: timePeriod,
 				totalGames: 0,
 				totalWins: 0,
 				winrate: null,
+				cardsData: null,
+				matchupInfo: null,
 				archetypeCoreCards: null,
 				cardVariations: null,
+				archetypeName: null,
 			};
 		}
 		currentDecklist = stat.decklist;
