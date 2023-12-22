@@ -19,12 +19,12 @@ export const persistData = async (
 	console.log('saved global archetype stats', archetypeStats.length);
 	await saveGlobalDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format);
 	console.log('saved global deck stats', deckStats.length);
-	// if (shouldPersistDetailedDecks) {
-	await saveDetailedArchetypeStats(archetypeStats, lastUpdate, rankBracket, timePeriod, format);
-	console.log('saved detailed archetype stats', archetypeStats.length);
-	await saveDetailedDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format);
-	console.log('saved detailed deck stats', deckStats.length);
-	// }
+	if (shouldPersistDetailedDecks) {
+		await saveDetailedArchetypeStats(archetypeStats, lastUpdate, rankBracket, timePeriod, format);
+		console.log('saved detailed archetype stats', archetypeStats.length);
+		await saveDetailedDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format);
+		console.log('saved detailed deck stats', deckStats.length);
+	}
 	console.log('finished saving data');
 };
 
@@ -135,7 +135,7 @@ const saveDeckChunk = async (
 	timePeriod: TimePeriod,
 	format: GameFormat,
 ) => {
-	console.debug('saving decks chunk', chunk.length);
+	// console.debug('saving decks chunk', chunk.length);
 	const values = chunk.map((deck) => {
 		const deckId = deck.decklist.replaceAll('/', '-');
 		return [lastUpdate, format, rankBracket, timePeriod, deckId, JSON.stringify(deck)];

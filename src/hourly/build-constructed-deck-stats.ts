@@ -98,7 +98,7 @@ const dispatchFormatEvents = async (context: Context) => {
 			LogType: 'Tail',
 			Payload: JSON.stringify(newEvent),
 		};
-		console.log('\tinvoking lambda', params);
+		// console.log('\tinvoking lambda', params);
 		const result = await lambda
 			.invoke({
 				FunctionName: context.functionName,
@@ -107,7 +107,7 @@ const dispatchFormatEvents = async (context: Context) => {
 				Payload: JSON.stringify(newEvent),
 			})
 			.promise();
-		console.log('\tinvocation result', result);
+		// console.log('\tinvocation result', result);
 		await sleep(50);
 	}
 };
@@ -116,7 +116,7 @@ const dispatchEvents = async (context: Context, format: GameFormat, startDate: s
 	console.log('saving rows for format', format);
 	await saveRowsOnS3(format, startDate, endDate);
 
-	console.log('dispatching events');
+	// console.log('dispatching events');
 	const allRankBracket: readonly RankBracket[] = [
 		'top-2000-legend',
 		'legend',
@@ -151,7 +151,7 @@ const dispatchEvents = async (context: Context, format: GameFormat, startDate: s
 				Payload: JSON.stringify(newEvent),
 			})
 			.promise();
-		console.log('\tinvocation result', result);
+		// console.log('\tinvocation result', result);
 		await sleep(50);
 	}
 	// }

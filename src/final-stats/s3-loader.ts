@@ -12,9 +12,9 @@ export const loadHourlyDeckStatFromS3 = async (
 	const start = Date.now();
 	const fileKey = `${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/hourly/${fileName}.gz.json`;
 	const data = await s3.readGzipContent(DECK_STATS_BUCKET, fileKey, 1, false, 300);
-	console.debug('read gzip content', Date.now() - start);
+	// console.debug('read gzip content', Date.now() - start);
 	const result: DeckStats = JSON.parse(data);
-	console.debug('loaded hourly deck', Date.now() - start, format, rankBracket, fileName, result?.deckStats?.length);
+	// console.debug('loaded hourly deck', Date.now() - start, format, rankBracket, fileName, result?.deckStats?.length);
 	return result;
 };
 

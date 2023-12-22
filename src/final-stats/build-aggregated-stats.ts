@@ -119,8 +119,8 @@ const getLastUpdate = (deckStats: readonly DeckStat[]): Date => {
 };
 
 const dispatchFormatEvents = async (context: Context) => {
-	// const allFormats: readonly GameFormat[] = ['standard', 'wild', 'twist'];
-	const allFormats: readonly GameFormat[] = ['standard'];
+	const allFormats: readonly GameFormat[] = ['standard', 'wild', 'twist'];
+	// const allFormats: readonly GameFormat[] = ['standard'];
 	for (const format of allFormats) {
 		console.log('dispatching events for format', format);
 		const newEvent = {
@@ -141,19 +141,19 @@ const dispatchFormatEvents = async (context: Context) => {
 };
 
 const dispatchEvents = async (context: Context, format: GameFormat) => {
-	console.log('dispatching events');
-	// const allTimePeriod: readonly TimePeriod[] = ['last-patch', 'past-20', 'past-7', 'past-3', 'current-season'];
-	const allTimePeriod: readonly TimePeriod[] = ['past-20'];
-	// const allRankBracket: readonly RankBracket[] = [
-	// 	'top-2000-legend',
-	// 	'legend',
-	// 	'legend-diamond',
-	// 	'diamond',
-	// 	'platinum',
-	// 	'bronze-gold',
-	// 	'all',
-	// ];
-	const allRankBracket: readonly RankBracket[] = ['all'];
+	// console.log('dispatching events');
+	const allTimePeriod: readonly TimePeriod[] = ['last-patch', 'past-20', 'past-7', 'past-3', 'current-season'];
+	// const allTimePeriod: readonly TimePeriod[] = ['past-20'];
+	const allRankBracket: readonly RankBracket[] = [
+		'top-2000-legend',
+		'legend',
+		'legend-diamond',
+		'diamond',
+		'platinum',
+		'bronze-gold',
+		'all',
+	];
+	// const allRankBracket: readonnly RankBracket[] = ['all'];
 	for (const timePeriod of allTimePeriod) {
 		for (const rankBracket of allRankBracket) {
 			console.log('dispatching events for timePeriod and rank', timePeriod, rankBracket);

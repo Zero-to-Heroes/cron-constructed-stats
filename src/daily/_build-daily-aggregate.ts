@@ -92,7 +92,7 @@ const dispatchFormatEvents = async (context: Context, event: any) => {
 				LogType: 'Tail',
 				Payload: JSON.stringify(newEvent),
 			};
-			console.log('\tinvoking lambda', params);
+			// console.log('\tinvoking lambda', params);
 			const result = await lambda
 				.invoke({
 					FunctionName: context.functionName,
@@ -101,7 +101,7 @@ const dispatchFormatEvents = async (context: Context, event: any) => {
 					Payload: JSON.stringify(newEvent),
 				})
 				.promise();
-			console.log('\tinvocation result', result);
+			// console.log('\tinvocation result', result);
 			await sleep(50);
 		}
 	}
@@ -131,7 +131,7 @@ const dispatchCatchUpEvents = async (context: Context, event: any) => {
 			LogType: 'Tail',
 			Payload: JSON.stringify(newEvent),
 		};
-		console.log('\tinvoking lambda', params);
+		// console.log('\tinvoking lambda', params);
 		const result = await lambda
 			.invoke({
 				FunctionName: context.functionName,
@@ -140,7 +140,7 @@ const dispatchCatchUpEvents = async (context: Context, event: any) => {
 				Payload: JSON.stringify(newEvent),
 			})
 			.promise();
-		console.log('\tinvocation result', result);
+		// console.log('\tinvocation result', result);
 		await sleep(50);
 	}
 };
