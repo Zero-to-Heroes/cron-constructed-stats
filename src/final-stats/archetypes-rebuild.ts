@@ -28,11 +28,12 @@ export const buildArchetypeStats = (
 };
 
 const buildArchetypeStat = (archetype: Archetype, archetypeDecks: readonly DeckStat[], allCards): ArchetypeStat => {
-	const debug = archetypeDecks.length > 10000;
+	const debug = archetype.id == 758; // archetypeDecks.length > 1000 || true;
 	// if (debug) {
 	// 	console.time('buildArchetypeStatsForArchetype');
 	// 	console.log('building stats for archetype', archetype.id, archetypeDecks.length);
 	// }
+	// debug && console.log('achetype', archetype.id, archetype.archetype);
 	const totalGames: number = archetypeDecks.flatMap((d) => d.totalGames).reduce((a, b) => a + b, 0);
 	const totalWins: number = archetypeDecks.flatMap((d) => d.totalWins).reduce((a, b) => a + b, 0);
 	const winrate: number = totalWins / totalGames;
@@ -63,31 +64,32 @@ const buildArchetypeStat = (archetype: Archetype, archetypeDecks: readonly DeckS
 const buildCoreCards = (decks: readonly DeckStat[], debug = false): readonly string[] => {
 	const numberOfDecks = decks.length;
 	const cardsMap: { [cardId: string]: number } = {};
+	// let index = 0;
 	for (const deck of decks) {
-		const cards = deck.cardsData.map((card) => card.cardId);
+		// const debug2 = debug && index % 100 === 0;
+		// debug2 && console.debug('looking at deck', deck, cardsMap);
+		const cards = deck.cardsData;
 		for (const card of cards) {
-			cardsMap[card] = (cardsMap[card] || 0) + 1;
+			const cardsInDeck = (card.inStartingDeck || 0) / deck.totalGames; // 1 or 2
+			cardsMap[card.cardId] = (cardsMap[card.cardId] || 0) + cardsInDeck;
+			// debug2 && console.debug('considering card', cardsMap[card.cardId], cardsInDeck, card.cardId, card);
 		}
+		// debug2 && console.debug('after looking at deck', index, cardsMap);
+		// index++;
 	}
-	// const uniqueIds = Object.values(cardsMap)
-
-	// const cardsForDecks = decks
-	// 	.map((deck) => deck.cardsData.map((card) => card.cardId))
-	// 	.filter((cards) => cards.length > 0);
-
-	// First build the list of all unique cards
-	// const uniqueIds = [...new Set(cardsForDecks.flat())];
+	// debug && console.log('cardMap', numberOfDecks, index++, cardsMap, decks[0], decks[1]);
 
 	const coreCards: string[] = [];
 	// For each card, count the number of times it appears in each deck
-	for (const card of Object.keys(cardsMap)) {
-		const totalCardsInDecks = cardsMap[card];
+	for (const cardId of Object.keys(cardsMap)) {
+		const totalCardsInDecks = cardsMap[cardId];
 		const averagePerDeck = totalCardsInDecks / numberOfDecks;
+		// debug && console.log('averagePerDeck', cardId, averagePerDeck, totalCardsInDecks, numberOfDecks);
 		if (averagePerDeck >= 2 * CORE_CARD_THRESHOLD) {
-			coreCards.push(card);
-			coreCards.push(card);
+			coreCards.push(cardId);
+			coreCards.push(cardId);
 		} else if (averagePerDeck >= CORE_CARD_THRESHOLD) {
-			coreCards.push(card);
+			coreCards.push(cardId);
 		}
 	}
 

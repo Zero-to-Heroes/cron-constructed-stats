@@ -120,8 +120,8 @@ const getLastUpdate = (deckStats: readonly DeckStat[]): Date => {
 };
 
 const dispatchFormatEvents = async (context: Context) => {
-	const allFormats: readonly GameFormat[] = ['standard', 'wild', 'twist'];
-	// const allFormats: readonly GameFormat[] = ['standard'];
+	// const allFormats: readonly GameFormat[] = ['standard', 'wild', 'twist'];
+	const allFormats: readonly GameFormat[] = ['standard'];
 	for (const format of allFormats) {
 		console.log('dispatching events for format', format);
 		const newEvent = {

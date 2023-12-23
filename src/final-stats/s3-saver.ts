@@ -164,7 +164,7 @@ const saveDeckChunk = async (
 	}
 };
 
-const defaultRetries = 5;
+const defaultRetries = 15;
 const saveDecksChunkInternal = async (mysql, values: any[][], retries = defaultRetries) => {
 	while (retries > 0) {
 		try {
@@ -184,7 +184,7 @@ const saveDecksChunkInternal = async (mysql, values: any[][], retries = defaultR
 		} catch (error) {
 			if (error.code === 'ER_LOCK_DEADLOCK' && retries > 0) {
 				console.log('Deadlock detected, retrying operation...', retries);
-				await sleep(1000);
+				await sleep(200);
 				retries--;
 			} else {
 				throw error;

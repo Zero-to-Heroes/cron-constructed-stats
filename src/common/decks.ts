@@ -32,7 +32,7 @@ export const mergeDeckStatsData = (sortedData: DeckStat[], timePeriod: TimePerio
 				currentStat.cardsData = mergeCardsData(cardsData);
 				currentStat.matchupInfo = mergeMatchupInfo(matchupInfo);
 				currentStat.winrate =
-					currentStat.totalGames === 0 ? null : 100 * round(currentStat.totalWins / currentStat.totalGames);
+					currentStat.totalGames === 0 ? null : round(currentStat.totalWins / currentStat.totalGames, 4);
 				result.push(currentStat);
 				// if (decksProcessed % 5000 === 0) {
 				// 	console.log(

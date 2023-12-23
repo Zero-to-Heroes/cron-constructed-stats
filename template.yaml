@@ -69,7 +69,7 @@ Resources:
         Properties:
             Handler: final-stats/build-aggregated-stats.default
             Runtime: nodejs16.x
-            Timeout: 300
+            Timeout: 800
             CodeUri: ./dist/final-stats/build-aggregated-stats
             MemorySize: 10000 
             ReservedConcurrentExecutions: 10 # Need to investigate locks. To avoid lock races when inserting data in DB
