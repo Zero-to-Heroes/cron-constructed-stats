@@ -1,3 +1,4 @@
+import { allClasses } from 'src/common/utils';
 import { gzipSync } from 'zlib';
 import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../common/config';
 import { DeckStat, DeckStats, GameFormat, RankBracket } from '../model';
@@ -34,4 +35,19 @@ export const persistData = async (
 	const gzippedMinResult = gzipSync(JSON.stringify(result));
 	const destination = `${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/daily/${startDate}.gz.json`;
 	await s3.writeFile(gzippedMinResult, DECK_STATS_BUCKET, destination, 'application/json', 'gzip');
+
+	for (const playerClass of allClasses) {
+		const classDecks = dailyDeckStats.filter((deck) => deck.playerClass === playerClass);
+		const result: DeckStats = {
+			lastUpdated: lastUpdate,
+			rankBracket: rankBracket,
+			timePeriod: null,
+			format: format,
+			dataPoints: classDecks.map((d) => d.totalGames).reduce((a, b) => a + b, 0),
+			deckStats: classDecks,
+		};
+		const gzippedMinResult = gzipSync(JSON.stringify(result));
+		const destination = `${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/daily/${startDate}-${playerClass}.gz.json`;
+		await s3.writeFile(gzippedMinResult, DECK_STATS_BUCKET, destination, 'application/json', 'gzip');
+	}
 };

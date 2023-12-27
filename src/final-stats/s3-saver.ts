@@ -2,6 +2,7 @@
 import { getConnection, sleep } from '@firestone-hs/aws-lambda-utils';
 import { gzipSync } from 'zlib';
 import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../common/config';
+import { getHashNumberFromDecklist } from '../common/utils';
 import { ArchetypeStat, ArchetypeStats, DeckStat, DeckStats, GameFormat, RankBracket, TimePeriod } from '../model';
 import { chunk } from '../utils';
 import { s3 } from './build-aggregated-stats';
@@ -15,16 +16,27 @@ export const persistData = async (
 	format: GameFormat,
 	shouldPersistDetailedDecks: boolean,
 ): Promise<void> => {
+	console.time('save-global-archetypes');
 	await saveGlobalArchetypeStats(archetypeStats, lastUpdate, rankBracket, timePeriod, format);
+	console.timeEnd('save-global-archetypes');
 	console.log('saved global archetype stats', archetypeStats.length);
+
+	console.time('save-global-decks');
 	await saveGlobalDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format);
 	console.log('saved global deck stats', deckStats.length);
-	if (shouldPersistDetailedDecks) {
-		await saveDetailedArchetypeStats(archetypeStats, lastUpdate, rankBracket, timePeriod, format);
-		console.log('saved detailed archetype stats', archetypeStats.length);
-		await saveDetailedDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format);
-		console.log('saved detailed deck stats', deckStats.length);
-	}
+	console.timeEnd('save-global-decks');
+
+	// if (shouldPersistDetailedDecks) {
+	console.time('save-detailed-archetypes');
+	await saveDetailedArchetypeStats(archetypeStats, lastUpdate, rankBracket, timePeriod, format);
+	console.log('saved detailed archetype stats', archetypeStats.length);
+	console.timeEnd('save-detailed-archetypes');
+
+	console.time('save-detailed-decks');
+	await saveDetailedDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format);
+	console.log('saved detailed deck stats', deckStats.length);
+	console.timeEnd('save-detailed-decks');
+	// }
 	console.log('finished saving data');
 };
 
@@ -135,11 +147,14 @@ const saveDeckChunk = async (
 	timePeriod: TimePeriod,
 	format: GameFormat,
 ) => {
+	const currentHour = new Date().getUTCHours() % 12;
 	// console.debug('saving decks chunk', chunk.length);
-	const values = chunk.map((deck) => {
-		const deckId = deck.decklist.replaceAll('/', '-');
-		return [lastUpdate, format, rankBracket, timePeriod, deckId, JSON.stringify(deck)];
-	});
+	const values = chunk
+		.filter((d) => getHashNumberFromDecklist(d.decklist) % 12 === currentHour)
+		.map((deck) => {
+			const deckId = deck.decklist.replaceAll('/', '-');
+			return [lastUpdate, format, rankBracket, timePeriod, deckId, JSON.stringify(deck)];
+		});
 	try {
 		await saveDecksChunkInternal(mysql, values);
 		// console.debug('chunk saved');
@@ -202,7 +217,9 @@ const saveDetailedArchetypeStats = async (
 	format: GameFormat,
 ): Promise<void> => {
 	// return;
+	const currentHour = new Date().getUTCHours() % 12;
 	const workingCopy = archetypeStats.filter((d) => d.totalGames >= 50);
+	// .filter((a) => a.id % 12 === currentHour);
 	const result: readonly boolean[] = await Promise.all(
 		workingCopy.map((archetype) => {
 			const gzippedResult = gzipSync(JSON.stringify(archetype));

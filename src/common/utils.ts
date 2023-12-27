@@ -83,3 +83,11 @@ export const buildFileKeys = (
 	);
 	return fileKeys;
 };
+
+export const getHashNumberFromDecklist = (decklist: string): number => {
+	const hash = decklist
+		.split('')
+		.map((c) => c.charCodeAt(0))
+		.reduce((a, b) => a + b, 0);
+	return hash;
+};

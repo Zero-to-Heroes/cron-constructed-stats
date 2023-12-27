@@ -8,17 +8,6 @@ export const mergeDeckStatsData = (sortedData: DeckStat[], timePeriod: TimePerio
 		return [];
 	}
 
-	// const currentData: { [decklist: string]: DeckStat } = {};
-	// for (const newStat of newData) {
-	// 	const existingStat = currentData[newStat.decklist];
-	// 	if (!existingStat) {
-	// 		currentData[newStat.decklist] = newStat;
-	// 	} else {
-	// 		currentData[newStat.decklist] = mergeDeckStats(existingStat, newStat);
-	// 	}
-	// }
-	// return Object.values(currentData)
-
 	const result = [];
 	let currentDecklist: string = null;
 	let currentStat: Mutable<DeckStat> = null;
