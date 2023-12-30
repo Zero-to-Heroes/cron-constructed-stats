@@ -1,6 +1,6 @@
-import { allClasses } from 'src/common/utils';
 import { gzipSync } from 'zlib';
 import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../common/config';
+import { allClasses } from '../common/utils';
 import { DeckStat, DeckStats, GameFormat, RankBracket } from '../model';
 import { s3 } from './_build-daily-aggregate';
 

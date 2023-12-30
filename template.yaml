@@ -13,7 +13,7 @@ Resources:
             Runtime: nodejs16.x
             Timeout: 880
             CodeUri: ./dist/hourly/build-constructed-deck-stats
-            MemorySize: 4000
+            MemorySize: 6000
             ReservedConcurrentExecutions: 10
             Layers:
                 - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
@@ -64,7 +64,47 @@ Resources:
                     Properties:
                         # Cron that runs once a day at 00:10
                         Schedule: cron(10 0 * * ? *)
-    AggregateHourlyConstructedDeckStats:
+    FinalStatsByClass:
+        Type: AWS::Serverless::Function
+        Properties:
+            Handler: final-result-by-class/build-aggregated-stats.default
+            Runtime: nodejs16.x
+            Timeout: 800
+            CodeUri: ./dist/final-result-by-class/build-aggregated-stats
+            MemorySize: 10000 
+            ReservedConcurrentExecutions: 10 # Need to investigate locks. To avoid lock races when inserting data in DB
+            Layers:
+                - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
+            Policies:
+                - AWSLambdaVPCAccessExecutionRole
+                - AmazonSESFullAccess
+                - SecretsManagerReadWrite
+                - AmazonSNSReadOnlyAccess
+                - AmazonS3FullAccess
+                - AWSLambda_FullAccess
+                - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+                # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
+            Tags:
+                LambdaName: cron-constructed-final-stats-by-class
+                #  TODO: trigger this after the hourly builds have been done, either via direct lambda invocation
+                #  or via sqs
+            Events:
+                LastPeriodTrigger:
+                    Type: Schedule
+                    Properties:
+                        # Cron that runs every hour at 40 minutes past the hour
+                        Schedule: cron(25 * * * ? *)
+    FinalStatsByClassVersion:
+        Type: AWS::Lambda::Version
+        Properties:
+            FunctionName: !Ref FinalStatsByClass
+    FinalStatsByClassAsyncConfig:
+        Type: AWS::Lambda::EventInvokeConfig
+        Properties:
+            FunctionName: !Ref FinalStatsByClass
+            MaximumRetryAttempts: 0
+            Qualifier: !GetAtt FinalStatsByClassVersion.Version
+    FinalStats:
         Type: AWS::Serverless::Function
         Properties:
             Handler: final-stats/build-aggregated-stats.default
@@ -85,7 +125,7 @@ Resources:
                 - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
                 # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
             Tags:
-                LambdaName: cron-aggregate-hourly-constructed-deck-stats
+                LambdaName: cron-constructed-final-stats
                 #  TODO: trigger this after the hourly builds have been done, either via direct lambda invocation
                 #  or via sqs
             Events:
@@ -94,16 +134,16 @@ Resources:
                     Properties:
                         # Cron that runs every hour at 40 minutes past the hour
                         Schedule: cron(40 * * * ? *)
-    AggregateHourlyConstructedDeckStatsVersion:
+    FinalStatsVersion:
         Type: AWS::Lambda::Version
         Properties:
-            FunctionName: !Ref AggregateHourlyConstructedDeckStats
-    AggregateHourlyConstructedDeckStatsAsyncConfig:
+            FunctionName: !Ref FinalStats
+    FinalStatsAsyncConfig:
         Type: AWS::Lambda::EventInvokeConfig
         Properties:
-            FunctionName: !Ref AggregateHourlyConstructedDeckStats
+            FunctionName: !Ref FinalStats
             MaximumRetryAttempts: 0
-            Qualifier: !GetAtt AggregateHourlyConstructedDeckStatsVersion.Version
+            Qualifier: !GetAtt FinalStatsVersion.Version
     RetrieveConstructedDeckDetails:
         Type: AWS::Serverless::Function
         Properties:

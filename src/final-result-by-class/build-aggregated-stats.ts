@@ -1,5 +1,5 @@
 import { S3, getConnectionReadOnly, getLastConstructedPatch, sleep } from '@firestone-hs/aws-lambda-utils';
-import { AllCardsService } from '@firestone-hs/reference-data';
+import { ALL_CLASSES, AllCardsService } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { loadArchetypes } from '../archetypes';
@@ -28,14 +28,16 @@ export default async (event, context: Context): Promise<any> => {
 	const format: GameFormat = event.format;
 	const timePeriod: TimePeriod = event.timePeriod;
 	const rankBracket: RankBracket = event.rankBracket;
+	const playerClass: string = event.playerClass;
 
-	console.log('aggregating data', format, timePeriod, rankBracket);
+	console.log('aggregating data', format, timePeriod, rankBracket, playerClass);
 	const patchInfo = await getLastConstructedPatch();
 	// console.log('memory before buildDeckStatsWithoutArchetypeInfo', formatMemoryUsage(process.memoryUsage()));
 	const deckStatsWithoutArchetypeInfo: readonly DeckStat[] = await buildDeckStatsWithoutArchetypeInfo(
 		format,
 		rankBracket,
 		timePeriod,
+		playerClass,
 		patchInfo,
 		allCards,
 	);
@@ -81,16 +83,8 @@ export default async (event, context: Context): Promise<any> => {
 
 	// Only persist detailed decks twice a day, at 00 hours and 12 hours
 	console.time('persistData');
-	const shouldPersistDetailedDecks = false; // new Date().getHours() % 12 === 0;
-	await persistData(
-		archetypeStats,
-		deckStats,
-		lastUpdate,
-		rankBracket,
-		timePeriod,
-		format,
-		shouldPersistDetailedDecks,
-	);
+	const shouldPersistDetailedDecks = new Date().getHours() % 12 === 0;
+	await persistData(archetypeStats, deckStats, lastUpdate, rankBracket, timePeriod, format, playerClass);
 	console.timeEnd('persistData');
 };
 
@@ -115,7 +109,7 @@ const getLastUpdate = (deckStats: readonly DeckStat[]): Date => {
 		);
 		throw new Error('could not find last update date');
 	}
-	console.log('loaded hourly deck data', deckStats.length, lastUpdate, lastUpdateInfo);
+	console.log('lastUpdate', lastUpdate, deckStats.length);
 	return lastUpdate;
 };
 
@@ -157,23 +151,26 @@ const dispatchEvents = async (context: Context, format: GameFormat) => {
 	// const allRankBracket: readonly RankBracket[] = ['top-2000-legend'];
 	for (const timePeriod of allTimePeriod) {
 		for (const rankBracket of allRankBracket) {
-			console.log('dispatching events for timePeriod and rank', timePeriod, rankBracket);
-			const newEvent = {
-				dailyProcessing: true,
-				timePeriod: timePeriod,
-				rankBracket: rankBracket,
-				format: format,
-			};
-			const params = {
-				FunctionName: context.functionName,
-				InvocationType: 'Event',
-				LogType: 'Tail',
-				Payload: JSON.stringify(newEvent),
-			};
-			// console.log('\tinvoking lambda', params);
-			const result = await lambda.invoke(params).promise();
-			// console.log('\tinvocation result', result);
-			await sleep(50);
+			for (const playerClass of ALL_CLASSES) {
+				console.log('dispatching events for timePeriod, rank and class', timePeriod, rankBracket, playerClass);
+				const newEvent = {
+					dailyProcessing: true,
+					timePeriod: timePeriod,
+					rankBracket: rankBracket,
+					format: format,
+					playerClass: playerClass,
+				};
+				const params = {
+					FunctionName: context.functionName,
+					InvocationType: 'Event',
+					LogType: 'Tail',
+					Payload: JSON.stringify(newEvent),
+				};
+				// console.log('\tinvoking lambda', params);
+				const result = await lambda.invoke(params).promise();
+				// console.log('\tinvocation result', result);
+				await sleep(50);
+			}
 		}
 	}
 };

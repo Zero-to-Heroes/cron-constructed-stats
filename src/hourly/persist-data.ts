@@ -1,4 +1,5 @@
 import { S3 } from '@firestone-hs/aws-lambda-utils';
+import { ALL_CLASSES } from '@firestone-hs/reference-data';
 import { gzipSync } from 'zlib';
 import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../common/config';
 import { DeckStat, DeckStats, GameFormat, RankBracket } from '../model';
@@ -38,6 +39,23 @@ const saveGlobalDeckStats = async (
 	const destination = `${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/hourly/${startDate}.gz.json`;
 	// console.log('writing to ', destination);
 	await s3.writeFile(gzippedResult, DECK_STATS_BUCKET, destination, 'application/json', 'gzip');
+
+	for (const playerClass of ALL_CLASSES) {
+		const classDecks = deckStats.filter((deck) => deck.playerClass === playerClass);
+		const result: DeckStats = {
+			lastUpdated: lastGameDate,
+			rankBracket: rankBracket,
+			timePeriod: null,
+			format: format,
+			dataPoints: classDecks.map((d) => d.totalGames).reduce((a, b) => a + b, 0),
+			deckStats: classDecks,
+			// archetypeStats: archetypeStats,
+		} as DeckStats;
+		const gzippedResult = gzipSync(JSON.stringify(result));
+		const destination = `${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/hourly/${startDate}-${playerClass}.gz.json`;
+		// console.log('writing to ', destination);
+		await s3.writeFile(gzippedResult, DECK_STATS_BUCKET, destination, 'application/json', 'gzip');
+	}
 };
 
 // const saveGlobalArchetypeStats = async (

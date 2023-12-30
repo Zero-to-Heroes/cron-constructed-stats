@@ -14,29 +14,27 @@ export const persistData = async (
 	rankBracket: RankBracket,
 	timePeriod: TimePeriod,
 	format: GameFormat,
-	shouldPersistDetailedDecks: boolean,
+	playerClass: string,
 ): Promise<void> => {
 	console.time('save-global-archetypes');
-	await saveGlobalArchetypeStats(archetypeStats, lastUpdate, rankBracket, timePeriod, format);
+	await saveGlobalArchetypeStats(archetypeStats, lastUpdate, rankBracket, timePeriod, format, playerClass);
 	console.timeEnd('save-global-archetypes');
 	console.log('saved global archetype stats', archetypeStats.length);
 
 	console.time('save-global-decks');
-	await saveGlobalDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format);
+	await saveGlobalDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format, playerClass);
 	console.log('saved global deck stats', deckStats.length);
 	console.timeEnd('save-global-decks');
 
-	if (shouldPersistDetailedDecks) {
-		console.time('save-detailed-archetypes');
-		await saveDetailedArchetypeStats(archetypeStats, lastUpdate, rankBracket, timePeriod, format);
-		console.log('saved detailed archetype stats', archetypeStats.length);
-		console.timeEnd('save-detailed-archetypes');
+	console.time('save-detailed-archetypes');
+	await saveDetailedArchetypeStats(archetypeStats, lastUpdate, rankBracket, timePeriod, format);
+	console.log('saved detailed archetype stats', archetypeStats.length);
+	console.timeEnd('save-detailed-archetypes');
 
-		console.time('save-detailed-decks');
-		await saveDetailedDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format);
-		console.log('saved detailed deck stats', deckStats.length);
-		console.timeEnd('save-detailed-decks');
-	}
+	console.time('save-detailed-decks');
+	await saveDetailedDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format);
+	console.log('saved detailed deck stats', deckStats.length);
+	console.timeEnd('save-detailed-decks');
 	console.log('finished saving data');
 };
 
@@ -46,6 +44,7 @@ const saveGlobalArchetypeStats = async (
 	rankBracket: RankBracket,
 	timePeriod: TimePeriod,
 	format: GameFormat,
+	playerClass: string,
 ): Promise<void> => {
 	if (!archetypeStats?.length) {
 		console.error('empty archetype stats', archetypeStats, rankBracket, timePeriod, format);
@@ -72,7 +71,7 @@ const saveGlobalArchetypeStats = async (
 	await s3.writeFile(
 		gzippedMinResult,
 		DECK_STATS_BUCKET,
-		`${DECK_STATS_KEY_PREFIX}/archetypes/${format}/${rankBracket}/${timePeriod}/overview-from-hourly.gz.json`,
+		`${DECK_STATS_KEY_PREFIX}/archetypes/${format}/${rankBracket}/${timePeriod}/overview-from-hourly-${playerClass}.gz.json`,
 		'application/json',
 		'gzip',
 	);
@@ -84,6 +83,7 @@ const saveGlobalDeckStats = async (
 	rankBracket: RankBracket,
 	timePeriod: TimePeriod,
 	format: GameFormat,
+	playerClass: string,
 ): Promise<void> => {
 	if (!deckStats?.length) {
 		console.error('empty deck stats', deckStats, rankBracket, timePeriod, format);
@@ -111,7 +111,7 @@ const saveGlobalDeckStats = async (
 	await s3.writeFile(
 		gzippedMinResult,
 		DECK_STATS_BUCKET,
-		`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/${timePeriod}/overview-from-hourly.gz.json`,
+		`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/${timePeriod}/overview-from-hourly-${playerClass}.gz.json`,
 		'application/json',
 		'gzip',
 	);
@@ -127,16 +127,57 @@ const saveDetailedDeckStats = async (
 	// return;
 	const workingCopy = deckStats.filter((d) => d.totalGames >= 50).sort((a, b) => b.totalGames - a.totalGames);
 	console.debug('saving detailed deck stats', workingCopy.length);
-	const chunks = chunk(workingCopy, 60);
+	// await saveDecksSql(workingCopy, lastUpdate, rankBracket, timePeriod, format);
+	await saveDecksS3(workingCopy, lastUpdate, rankBracket, timePeriod, format);
+};
+
+const saveDecksS3 = async (
+	workingCopy: readonly DeckStat[],
+	lastUpdate: Date,
+	rankBracket: RankBracket,
+	timePeriod: TimePeriod,
+	format: GameFormat,
+) => {
+	const chunks = chunk(workingCopy, 10);
+
+	for (const chunk of chunks) {
+		const result: readonly boolean[] = await Promise.all(
+			chunk.map((deck) => {
+				const deckId = deck.decklist.replaceAll('/', '-');
+				const gzippedResult = gzipSync(JSON.stringify(deck));
+				return s3.writeFile(
+					gzippedResult,
+					DECK_STATS_BUCKET,
+					`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/${timePeriod}/deck/${deckId}.gz.json`,
+					'application/json',
+					'gzip',
+				);
+			}),
+		);
+		console.log('uploaded successfully', result.filter((r) => r).length, '/', chunk.length, 'decks');
+	}
+};
+
+const saveDecksSql = async (
+	workingCopy: readonly DeckStat[],
+	lastUpdate: Date,
+	rankBracket: RankBracket,
+	timePeriod: TimePeriod,
+	format: GameFormat,
+) => {
+	const chunks = chunk(workingCopy, 1);
 
 	const mysql = await getConnection();
-	// Try to insert based on format, rankBracket, timePeriod and if it exists, update
-	// the existing row
-	for (const chunk of chunks) {
-		await saveDeckChunk(mysql, chunk, lastUpdate, rankBracket, timePeriod, format);
-		// break;
+	try {
+		// Try to insert based on format, rankBracket, timePeriod and if it exists, update
+		// the existing row
+		for (const chunk of chunks) {
+			await saveDeckChunk(mysql, chunk, lastUpdate, rankBracket, timePeriod, format);
+			// break;
+		}
+	} finally {
+		mysql.end();
 	}
-	mysql.end();
 };
 
 const saveDeckChunk = async (
@@ -147,14 +188,15 @@ const saveDeckChunk = async (
 	timePeriod: TimePeriod,
 	format: GameFormat,
 ) => {
+	// New decks are saved every 12 hours, and we spread them over time
 	const currentHour = new Date().getUTCHours() % 12;
-	// console.debug('saving decks chunk', chunk.length);
 	const values = chunk
 		.filter((d) => getHashNumberFromDecklist(d.decklist) % 12 === currentHour)
 		.map((deck) => {
 			const deckId = deck.decklist.replaceAll('/', '-');
 			return [lastUpdate, format, rankBracket, timePeriod, deckId, JSON.stringify(deck)];
 		});
+	console.debug('saving decks chunk', chunk.length, values.length);
 	try {
 		await saveDecksChunkInternal(mysql, values);
 		// console.debug('chunk saved');
@@ -171,7 +213,7 @@ const saveDeckChunk = async (
 				result[chunkIndex].push(value);
 				return result;
 			}, []);
-			// console.log('split chunk', splitChunks.length);
+			console.log('split chunk', splitChunks.length);
 			for (const splitChunk of splitChunks) {
 				await saveDeckChunk(mysql, splitChunk, lastUpdate, rankBracket, timePeriod, format);
 			}
@@ -217,7 +259,6 @@ const saveDetailedArchetypeStats = async (
 	format: GameFormat,
 ): Promise<void> => {
 	// return;
-	const currentHour = new Date().getUTCHours() % 12;
 	const workingCopy = archetypeStats.filter((d) => d.totalGames >= 50);
 	// .filter((a) => a.id % 12 === currentHour);
 	const result: readonly boolean[] = await Promise.all(

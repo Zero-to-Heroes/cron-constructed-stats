@@ -1,15 +1,12 @@
 /* eslint-disable no-case-declarations */
 import { PatchInfo } from '@firestone-hs/aws-lambda-utils';
-import { CardClass } from '@firestone-hs/reference-data';
+import { ALL_CLASSES } from '@firestone-hs/reference-data';
 import { TimePeriod } from '../model';
 import { DECK_STATS_KEY_PREFIX } from './config';
 
 // Build the list of all classes from the CardClass enum
-export const allClasses: readonly string[] = Object.keys(CardClass)
-	.map((key) => CardClass[key])
-	.filter((value) => typeof value === 'string')
-	.filter((value) => ![CardClass.INVALID, CardClass.NEUTRAL, CardClass.DREAM, CardClass.WHIZBANG].includes(value))
-	.map((value) => value.toLowerCase());
+
+export const allClasses = ALL_CLASSES;
 
 export const getFileNamesToLoad = (timePeriod: TimePeriod, patchInfo: PatchInfo): readonly string[] => {
 	const hoursBack: number = computeHoursBackFromNow(timePeriod, patchInfo);
