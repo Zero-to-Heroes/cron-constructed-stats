@@ -32,7 +32,7 @@ export const persistData = async (
 	console.timeEnd('save-detailed-archetypes');
 
 	console.time('save-detailed-decks');
-	await saveDetailedDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format);
+	await saveDetailedDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format, playerClass);
 	console.log('saved detailed deck stats', deckStats.length);
 	console.timeEnd('save-detailed-decks');
 	console.log('finished saving data');
@@ -123,12 +123,13 @@ const saveDetailedDeckStats = async (
 	rankBracket: RankBracket,
 	timePeriod: TimePeriod,
 	format: GameFormat,
+	playerClass: string,
 ): Promise<void> => {
 	// return;
 	const workingCopy = deckStats.filter((d) => d.totalGames >= 50).sort((a, b) => b.totalGames - a.totalGames);
 	console.debug('saving detailed deck stats', workingCopy.length);
 	// await saveDecksSql(workingCopy, lastUpdate, rankBracket, timePeriod, format);
-	await saveDecksS3(workingCopy, lastUpdate, rankBracket, timePeriod, format);
+	await saveDecksS3(workingCopy, lastUpdate, rankBracket, timePeriod, format, playerClass);
 };
 
 const saveDecksS3 = async (
@@ -137,25 +138,45 @@ const saveDecksS3 = async (
 	rankBracket: RankBracket,
 	timePeriod: TimePeriod,
 	format: GameFormat,
+	playerClass: string,
 ) => {
-	const chunks = chunk(workingCopy, 10);
+	const gzippedResult = gzipSync(JSON.stringify(workingCopy));
+	await s3.writeFile(
+		gzippedResult,
+		DECK_STATS_BUCKET,
+		`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/${timePeriod}/deck/all-decks-${playerClass}.gz.json`,
+		'application/json',
+		'gzip',
+	);
 
-	for (const chunk of chunks) {
-		const result: readonly boolean[] = await Promise.all(
-			chunk.map((deck) => {
-				const deckId = deck.decklist.replaceAll('/', '-');
-				const gzippedResult = gzipSync(JSON.stringify(deck));
-				return s3.writeFile(
-					gzippedResult,
-					DECK_STATS_BUCKET,
-					`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/${timePeriod}/deck/${deckId}.gz.json`,
-					'application/json',
-					'gzip',
-				);
-			}),
-		);
-		console.log('uploaded successfully', result.filter((r) => r).length, '/', chunk.length, 'decks');
-	}
+	const deckIds = workingCopy.map((deck) => encodeURIComponent(deck.decklist.replaceAll('/', '-')));
+	const gzippedDeckIds = gzipSync(JSON.stringify(deckIds));
+	await s3.writeFile(
+		gzippedDeckIds,
+		DECK_STATS_BUCKET,
+		`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/${timePeriod}/deck/all-decks-ids-${playerClass}.gz.json`,
+		'application/json',
+		'gzip',
+	);
+
+	// const chunks = chunk(workingCopy, 10);
+
+	// for (const chunk of chunks) {
+	// 	const result: readonly boolean[] = await Promise.all(
+	// 		chunk.map((deck) => {
+	// 			const deckId = encodeURIComponent(deck.decklist.replaceAll('/', '-'));
+	// 			const gzippedResult = gzipSync(JSON.stringify(deck));
+	// 			return s3.writeFile(
+	// 				gzippedResult,
+	// 				DECK_STATS_BUCKET,
+	// 				`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/${timePeriod}/deck/${deckId}.gz.json`,
+	// 				'application/json',
+	// 				'gzip',
+	// 			);
+	// 		}),
+	// 	);
+	// 	console.log('uploaded successfully', result.filter((r) => r).length, '/', chunk.length, 'decks');
+	// }
 };
 
 const saveDecksSql = async (

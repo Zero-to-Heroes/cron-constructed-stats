@@ -71,7 +71,7 @@ Resources:
             Runtime: nodejs16.x
             Timeout: 800
             CodeUri: ./dist/final-result-by-class/build-aggregated-stats
-            MemorySize: 10000 
+            MemorySize: 6000 
             ReservedConcurrentExecutions: 10 # Need to investigate locks. To avoid lock races when inserting data in DB
             Layers:
                 - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
@@ -107,11 +107,11 @@ Resources:
     FinalStats:
         Type: AWS::Serverless::Function
         Properties:
-            Handler: final-stats/build-aggregated-stats.default
+            Handler: final-stats/_build-aggregated-stats.default
             Runtime: nodejs16.x
             Timeout: 800
-            CodeUri: ./dist/final-stats/build-aggregated-stats
-            MemorySize: 10000 
+            CodeUri: ./dist/final-stats/_build-aggregated-stats
+            MemorySize: 2000 
             ReservedConcurrentExecutions: 10 # Need to investigate locks. To avoid lock races when inserting data in DB
             Layers:
                 - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
