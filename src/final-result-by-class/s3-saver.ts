@@ -126,7 +126,16 @@ const saveDetailedDeckStats = async (
 	playerClass: string,
 ): Promise<void> => {
 	// return;
-	const workingCopy = deckStats.filter((d) => d.totalGames >= 50).sort((a, b) => b.totalGames - a.totalGames);
+	const workingCopy = deckStats
+		.filter((d) => d.totalGames >= 50)
+		.map((d) => {
+			const result: DeckStat = {
+				...d,
+				cardsData: d.cardsData.filter((c) => c.inStartingDeck > d.totalGames / 50),
+			};
+			return result;
+		})
+		.sort((a, b) => b.totalGames - a.totalGames);
 	console.debug('saving detailed deck stats', workingCopy.length);
 	// await saveDecksSql(workingCopy, lastUpdate, rankBracket, timePeriod, format);
 	await saveDecksS3(workingCopy, lastUpdate, rankBracket, timePeriod, format, playerClass);
@@ -144,17 +153,17 @@ const saveDecksS3 = async (
 	await s3.writeFile(
 		gzippedResult,
 		DECK_STATS_BUCKET,
-		`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/${timePeriod}/deck/all-decks-${playerClass}.gz.json`,
+		`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/${timePeriod}/all-decks-${playerClass}.gz.json`,
 		'application/json',
 		'gzip',
 	);
 
-	const deckIds = workingCopy.map((deck) => encodeURIComponent(deck.decklist.replaceAll('/', '-')));
+	const deckIds = workingCopy.map((deck) => deck.decklist.replaceAll('/', '-'));
 	const gzippedDeckIds = gzipSync(JSON.stringify(deckIds));
 	await s3.writeFile(
 		gzippedDeckIds,
 		DECK_STATS_BUCKET,
-		`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/${timePeriod}/deck/all-decks-ids-${playerClass}.gz.json`,
+		`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/${timePeriod}/all-decks-ids-${playerClass}.gz.json`,
 		'application/json',
 		'gzip',
 	);
