@@ -28,6 +28,7 @@ export default async (event, context: Context): Promise<any> => {
 	const format: GameFormat = event.format;
 	const timePeriod: TimePeriod = event.timePeriod;
 	const rankBracket: RankBracket = event.rankBracket;
+	console.log('aggregating data', format, timePeriod, rankBracket);
 
 	const classDecks = (
 		await Promise.all(
@@ -41,7 +42,10 @@ export default async (event, context: Context): Promise<any> => {
 				),
 			),
 		)
-	).map((content) => JSON.parse(content) as DeckStats);
+	)
+		.map((content) => JSON.parse(content) as DeckStats)
+		// Because some game modes, like Twist, don't have all the classes
+		.filter((stat) => !!stat);
 	const classArchetypes = (
 		await Promise.all(
 			ALL_CLASSES.map((playerClass) =>
@@ -54,7 +58,9 @@ export default async (event, context: Context): Promise<any> => {
 				),
 			),
 		)
-	).map((content) => JSON.parse(content) as ArchetypeStats);
+	)
+		.map((content) => JSON.parse(content) as ArchetypeStats)
+		.filter((archetype) => !!archetype);
 	const allArchetypes = mergeArchetypes(classArchetypes);
 	const allDecks = mergeDecks(classDecks);
 	const lastUpdate = getLastUpdate(classDecks);
@@ -81,8 +87,8 @@ const getLastUpdate = (deckStats: readonly DeckStats[]): Date => {
 };
 
 const dispatchFormatEvents = async (context: Context) => {
-	// const allFormats: readonly GameFormat[] = ['standard', 'wild', 'twist'];
-	const allFormats: readonly GameFormat[] = ['standard'];
+	const allFormats: readonly GameFormat[] = ['standard', 'wild', 'twist'];
+	// const allFormats: readonly GameFormat[] = ['standard'];
 	for (const format of allFormats) {
 		console.log('dispatching events for format', format);
 		const newEvent = {

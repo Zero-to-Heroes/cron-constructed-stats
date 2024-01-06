@@ -47,6 +47,9 @@ export default async (event, context: Context): Promise<any> => {
 		deckStatsWithoutArchetypeInfo?.map((a) => a.totalGames).reduce((a, b) => a + b, 0),
 		deckStatsWithoutArchetypeInfo[0],
 	);
+	if (!deckStatsWithoutArchetypeInfo?.length) {
+		return;
+	}
 
 	console.time('archetypesSql');
 	const mysql = await getConnectionReadOnly();
@@ -97,18 +100,7 @@ const getLastUpdate = (deckStats: readonly DeckStat[]): Date => {
 		}))
 		.filter((date) => !isNaN(date.time))
 		.sort((a, b) => b.time - a.time)[0];
-	const lastUpdate = lastUpdateInfo.date;
-	if (!lastUpdate) {
-		console.error(
-			'could not find last update date',
-			deckStats.map((d) => ({
-				date: new Date(d.lastUpdate),
-				dateStr: d.lastUpdate,
-				time: new Date(d.lastUpdate).getTime(),
-			})),
-		);
-		throw new Error('could not find last update date');
-	}
+	const lastUpdate = lastUpdateInfo?.date ?? new Date();
 	console.log('lastUpdate', lastUpdate, deckStats.length);
 	return lastUpdate;
 };

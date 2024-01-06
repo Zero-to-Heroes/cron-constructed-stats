@@ -51,6 +51,13 @@ export default async (event, context: Context): Promise<any> => {
 
 	// The cached deck is not available, let's try to read it from S3
 	const deck = await readDeckFromS3(format, rank, timePeriod, deckId);
+	if (!deck) {
+		return {
+			statusCode: 404,
+			body: JSON.stringify({ error: 'deck not found' }),
+		};
+	}
+
 	await updateDeckInDb(format, rank, timePeriod, deckId, deck);
 	return {
 		statusCode: 200,
@@ -117,6 +124,11 @@ const readDeckFromS3 = async (format: string, rank: string, timePeriod: string, 
 
 	const playerClass = deckIdMap[deckId];
 	console.log('playerClass', playerClass);
+	if (!playerClass) {
+		console.error('missing deck id', deckId);
+		return null;
+	}
+
 	const allDecksStr = await s3.readGzipContent(
 		DECK_STATS_BUCKET,
 		`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rank}/${timePeriod}/all-decks-${playerClass}.gz.json`,
