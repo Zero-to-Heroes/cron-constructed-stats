@@ -30,9 +30,9 @@ export const buildArchetypeStats = (
 };
 
 const buildArchetypeStat = (archetype: Archetype, archetypeDecks: readonly DeckStat[], allCards): ArchetypeStat => {
-	const debug = archetype.id == 758; // archetypeDecks.length > 1000 || true;
+	const debug = archetype.id == 761; // highlander shaman
 	// if (debug) {
-	// 	console.time('buildArchetypeStatsForArchetype');
+	// 	// console.time('buildArchetypeStatsForArchetype');
 	// 	console.log('building stats for archetype', archetype.id, archetypeDecks.length);
 	// }
 	// debug && console.log('achetype', archetype.id, archetype.archetype);
@@ -55,7 +55,8 @@ const buildArchetypeStat = (archetype: Archetype, archetypeDecks: readonly DeckS
 		matchupInfo: matchupInfo,
 	};
 	// if (debug) {
-	// 	console.timeEnd('buildArchetypeStatsForArchetype');
+	// 	// console.timeEnd('buildArchetypeStatsForArchetype');
+	// 	console.log('archetype data', result.totalGames, cardsData.find(d => d.cardId === "CFM_696"))
 	// }
 	return result;
 };

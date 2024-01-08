@@ -23,6 +23,7 @@ export const buildCardsDataForDeck = (rows: readonly ConstructedMatchStatDbRow[]
 		});
 	}
 
+	// const debug =
 	for (const row of rows) {
 		const matchAnalysis: MatchAnalysis = JSON.parse(row.matchAnalysis);
 		const deckCards = Object.keys(matchAnalysis.cardsAnalysis);

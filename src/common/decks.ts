@@ -3,7 +3,7 @@ import { Mutable, round } from '../utils';
 import { mergeCardsData } from './cards';
 import { mergeMatchupInfo } from './matchup';
 
-export const mergeDeckStatsData = (sortedData: DeckStat[], timePeriod: TimePeriod): DeckStat[] => {
+export const mergeDeckStatsData = (sortedData: DeckStat[], timePeriod: TimePeriod, debug = false): DeckStat[] => {
 	if (!sortedData?.length) {
 		return [];
 	}
@@ -23,11 +23,11 @@ export const mergeDeckStatsData = (sortedData: DeckStat[], timePeriod: TimePerio
 				currentStat.winrate =
 					currentStat.totalGames === 0 ? null : round(currentStat.totalWins / currentStat.totalGames, 4);
 				result.push(currentStat);
-				// if (decksProcessed % 5000 === 0) {
+				// if (debug && currentStat.archetypeId === 761) {
 				// 	console.log(
-				// 		'memory after processing new deck',
-				// 		decksProcessed,
-				// 		formatMemoryUsage(process.memoryUsage()),
+				// 		'processed highliander shaman',
+				// 		currentStat.cardsData.filter((d) => d.cardId === 'WW_0700'),
+				// 		cardsData.filter((d) => d.cardId === 'WW_0700'),
 				// 	);
 				// }
 				cardsData = [];

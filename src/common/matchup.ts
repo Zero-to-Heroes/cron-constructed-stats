@@ -1,10 +1,11 @@
 import { ConstructedMatchupInfo } from '../model';
 
-export const mergeMatchupInfo = (sortedMatchupInfo: ConstructedMatchupInfo[]): readonly ConstructedMatchupInfo[] => {
+export const mergeMatchupInfo = (inputMatchupInfo: ConstructedMatchupInfo[]): readonly ConstructedMatchupInfo[] => {
 	const result = [];
 	let currentOpponentClass: string = null;
 	let currentMatchupInfo: ConstructedMatchupInfo = null;
 	let matchupInfo = null;
+	const sortedMatchupInfo = [...inputMatchupInfo].sort((a, b) => a.opponentClass.localeCompare(b.opponentClass));
 	while ((matchupInfo = sortedMatchupInfo.pop()) != null) {
 		if (currentOpponentClass === null || matchupInfo.opponentClass !== currentOpponentClass) {
 			if (currentMatchupInfo !== null) {

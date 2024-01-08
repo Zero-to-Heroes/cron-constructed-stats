@@ -21,7 +21,7 @@ export const mergeAllHourlyStatsForTheDay = async (
 		?.flatMap((d) => d?.deckStats ?? [])
 		.filter((d) => !!d.decklist)
 		.sort((a, b) => a.decklist.localeCompare(b.decklist));
-	const result = mergeDeckStatsData(dailyDeckStats, null);
+	const result = mergeDeckStatsData(dailyDeckStats, null, true);
 	console.debug('aggregated', dailyDeckStats.length, 'into', result.length, 'deck stats');
 	console.debug('unique decklists', [...new Set(dailyDeckStats.map((stat) => stat.decklist))].length);
 	console.debug('unique decklists in result', [...new Set(result.map((stat) => stat.decklist))].length);

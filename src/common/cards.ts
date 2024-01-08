@@ -1,10 +1,11 @@
 import { ConstructedCardData } from '../model';
 
-export const mergeCardsData = (sortedCardsData: ConstructedCardData[]): readonly ConstructedCardData[] => {
+export const mergeCardsData = (inputCardsData: ConstructedCardData[]): readonly ConstructedCardData[] => {
 	const result = [];
 	let currentCardId: string = null;
 	let currentCardData: ConstructedCardData = null;
 	let cardData = null;
+	const sortedCardsData = [...inputCardsData].sort((a, b) => a.cardId.localeCompare(b.cardId));
 	while ((cardData = sortedCardsData.pop()) != null) {
 		if (currentCardId === null || cardData.cardId !== currentCardId) {
 			if (currentCardData !== null) {
