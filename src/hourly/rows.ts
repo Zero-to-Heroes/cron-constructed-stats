@@ -13,7 +13,7 @@ export const readRowsFromS3 = async (
 ): Promise<readonly ConstructedMatchStatDbRow[]> => {
 	return new Promise<readonly ConstructedMatchStatDbRow[]>((resolve, reject) => {
 		const workingRowsFile = `${WORKING_ROWS_FILE.replace('%format%', format).replace('%time%', startDate)}`;
-		console.debug('reading rows from s3', workingRowsFile);
+		// console.debug('reading rows from s3', workingRowsFile);
 		let parseErrors = 0;
 		let totalParsed = 0;
 		const stream: Readable = s3.readStream('static.zerotoheroes.com', workingRowsFile);

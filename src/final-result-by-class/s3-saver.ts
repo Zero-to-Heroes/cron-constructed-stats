@@ -16,26 +16,26 @@ export const persistData = async (
 	format: GameFormat,
 	playerClass: string,
 ): Promise<void> => {
-	console.time('save-global-archetypes');
+	// console.time('save-global-archetypes');
 	await saveGlobalArchetypeStats(archetypeStats, lastUpdate, rankBracket, timePeriod, format, playerClass);
-	console.timeEnd('save-global-archetypes');
-	console.log('saved global archetype stats', archetypeStats.length);
+	// console.timeEnd('save-global-archetypes');
+	// console.log('saved global archetype stats', archetypeStats.length);
 
-	console.time('save-global-decks');
+	// console.time('save-global-decks');
 	await saveGlobalDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format, playerClass);
-	console.log('saved global deck stats', deckStats.length);
-	console.timeEnd('save-global-decks');
+	// console.log('saved global deck stats', deckStats.length);
+	// console.timeEnd('save-global-decks');
 
-	console.time('save-detailed-archetypes');
+	// console.time('save-detailed-archetypes');
 	await saveDetailedArchetypeStats(archetypeStats, lastUpdate, rankBracket, timePeriod, format);
-	console.log('saved detailed archetype stats', archetypeStats.length);
-	console.timeEnd('save-detailed-archetypes');
+	// console.log('saved detailed archetype stats', archetypeStats.length);
+	// console.timeEnd('save-detailed-archetypes');
 
-	console.time('save-detailed-decks');
+	// console.time('save-detailed-decks');
 	await saveDetailedDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format, playerClass);
-	console.log('saved detailed deck stats', deckStats.length);
-	console.timeEnd('save-detailed-decks');
-	console.log('finished saving data');
+	// console.log('saved detailed deck stats', deckStats.length);
+	// console.timeEnd('save-detailed-decks');
+	// console.log('finished saving data');
 };
 
 const saveGlobalArchetypeStats = async (
@@ -136,7 +136,7 @@ const saveDetailedDeckStats = async (
 			return result;
 		})
 		.sort((a, b) => b.totalGames - a.totalGames);
-	console.debug('saving detailed deck stats', workingCopy.length);
+	// console.debug('saving detailed deck stats', workingCopy.length);
 	// await saveDecksSql(workingCopy, lastUpdate, rankBracket, timePeriod, format);
 	await saveDecksS3(workingCopy, lastUpdate, rankBracket, timePeriod, format, playerClass);
 };
@@ -226,7 +226,7 @@ const saveDeckChunk = async (
 			const deckId = deck.decklist.replaceAll('/', '-');
 			return [lastUpdate, format, rankBracket, timePeriod, deckId, JSON.stringify(deck)];
 		});
-	console.debug('saving decks chunk', chunk.length, values.length);
+	// console.debug('saving decks chunk', chunk.length, values.length);
 	try {
 		await saveDecksChunkInternal(mysql, values);
 		// console.debug('chunk saved');
@@ -243,7 +243,7 @@ const saveDeckChunk = async (
 				result[chunkIndex].push(value);
 				return result;
 			}, []);
-			console.log('split chunk', splitChunks.length);
+			// console.log('split chunk', splitChunks.length);
 			for (const splitChunk of splitChunks) {
 				await saveDeckChunk(mysql, splitChunk, lastUpdate, rankBracket, timePeriod, format);
 			}

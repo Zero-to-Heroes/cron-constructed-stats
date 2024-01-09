@@ -49,13 +49,13 @@ export default async (event, context: Context): Promise<any> => {
 	console.log('reading rows from s3', format, rankBracket);
 	const allRows: readonly ConstructedMatchStatDbRow[] = await readRowsFromS3(format, startDate);
 	const rows = allRows.filter((r) => r.format === format);
-	console.log('\t', 'loaded rows', rows.length);
+	// console.log('\t', 'loaded rows', rows.length);
 	// const mysql = await getConnectionReadOnly();
 	// const archetypes = await loadArchetypes(mysql);
 	// mysql.end();
 	// console.log('\t', 'loaded archetypes', archetypes.length);
 	const relevantRows = rows.filter((r) => isCorrectRank(r, rankBracket));
-	console.log('\t', 'relevantRows', relevantRows.length, rankBracket);
+	// console.log('\t', 'relevantRows', relevantRows.length, rankBracket);
 	const lastGameDate = relevantRows
 		.map((r) => new Date(r.creationDate))
 		.sort()
@@ -64,7 +64,7 @@ export default async (event, context: Context): Promise<any> => {
 	// console.log('\t', 'built archetype stats', archetypeStats.length);
 	const deckStats: readonly DeckStat[] = buildDeckStats(relevantRows, rankBracket, format, allCards);
 	// const enhancedArchetypes = enhanceArchetypeStats(, deckStats);
-	console.log('\t', 'built deck stats', deckStats.length);
+	// console.log('\t', 'built deck stats', deckStats.length);
 	await saveDeckStats(deckStats, lastGameDate, rankBracket, format, startDate);
 
 	return { statusCode: 200, body: null };
@@ -77,7 +77,7 @@ const dispatchFormatEvents = async (context: Context) => {
 	processStartDate.setSeconds(0);
 	processStartDate.setMilliseconds(0);
 	processStartDate.setHours(processStartDate.getHours() - 1);
-	console.log('processStartDate', processStartDate);
+	// console.log('processStartDate', processStartDate);
 	// End one hour later
 	const processEndDate = new Date(processStartDate);
 	processEndDate.setHours(processEndDate.getHours() + 1);
@@ -113,7 +113,7 @@ const dispatchFormatEvents = async (context: Context) => {
 };
 
 const dispatchEvents = async (context: Context, format: GameFormat, startDate: string, endDate: string) => {
-	console.log('saving rows for format', format);
+	// console.log('saving rows for format', format);
 	await saveRowsOnS3(format, startDate, endDate);
 
 	// console.log('dispatching events');

@@ -10,7 +10,7 @@ export const mergeAllHourlyStatsForTheDay = async (
 	targetDate: string,
 ): Promise<readonly DeckStat[]> => {
 	const fileNames = buildFileNamesForGivenDay(targetDate);
-	console.log('fileNames', targetDate, fileNames);
+	// console.log('fileNames', targetDate, fileNames);
 	const fileKeys = buildFileKeys(format, rankBracket, 'hourly', fileNames);
 	const hourlyRawData = await Promise.all(
 		fileKeys.map((fileKey) => s3.readGzipContent(DECK_STATS_BUCKET, fileKey, 1, false, 300)),
@@ -22,9 +22,9 @@ export const mergeAllHourlyStatsForTheDay = async (
 		.filter((d) => !!d.decklist)
 		.sort((a, b) => a.decklist.localeCompare(b.decklist));
 	const result = mergeDeckStatsData(dailyDeckStats, null, true);
-	console.debug('aggregated', dailyDeckStats.length, 'into', result.length, 'deck stats');
-	console.debug('unique decklists', [...new Set(dailyDeckStats.map((stat) => stat.decklist))].length);
-	console.debug('unique decklists in result', [...new Set(result.map((stat) => stat.decklist))].length);
+	// console.debug('aggregated', dailyDeckStats.length, 'into', result.length, 'deck stats');
+	// console.debug('unique decklists', [...new Set(dailyDeckStats.map((stat) => stat.decklist))].length);
+	// console.debug('unique decklists in result', [...new Set(result.map((stat) => stat.decklist))].length);
 	// const decksWithEnoughGames = result.filter((stat) => stat.totalGames >= 5);
 	// console.debug('decksWithEnoughGames', decksWithEnoughGames.length);
 	return result;

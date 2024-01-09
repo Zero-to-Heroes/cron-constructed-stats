@@ -13,10 +13,10 @@ export const buildArchetypeStats = (
 	dailyDeckData: readonly DeckStat[],
 	allCards: AllCardsService,
 ): readonly ArchetypeStat[] => {
-	console.time('groupBy');
+	// console.time('groupBy');
 	const groupedByArchetype = groupByFunction((deckStat: DeckStat) => deckStat.archetypeId)(dailyDeckData);
-	console.timeEnd('groupBy');
-	console.debug('building', Object.keys(groupedByArchetype).length, 'archetypes');
+	// console.timeEnd('groupBy');
+	// console.debug('building', Object.keys(groupedByArchetype).length, 'archetypes');
 	const archetypeStats: readonly ArchetypeStat[] = Object.keys(groupedByArchetype)
 		.map((archetypeId) =>
 			buildArchetypeStat(

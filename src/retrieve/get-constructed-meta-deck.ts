@@ -120,10 +120,10 @@ const readDeckFromS3 = async (format: string, rank: string, timePeriod: string, 
 			});
 		}),
 	);
-	console.log('all deck ids', Object.keys(deckIdMap).length, deckId, Object.keys(deckIdMap));
+	// console.log('all deck ids', Object.keys(deckIdMap).length, deckId, Object.keys(deckIdMap));
 
 	const playerClass = deckIdMap[deckId];
-	console.log('playerClass', playerClass);
+	// console.log('playerClass', playerClass);
 	if (!playerClass) {
 		console.error('missing deck id', deckId);
 		return null;
@@ -138,15 +138,15 @@ const readDeckFromS3 = async (format: string, rank: string, timePeriod: string, 
 	);
 	// Size of the string in MB
 	const size = Buffer.byteLength(allDecksStr, 'utf8') / 1024 / 1024;
-	console.log(
-		'fetched all decks raw string',
-		`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rank}/${timePeriod}/all-decks-${playerClass}.gz.json`,
-		`${size} MB`,
-	);
+	// console.log(
+	// 	'fetched all decks raw string',
+	// 	`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rank}/${timePeriod}/all-decks-${playerClass}.gz.json`,
+	// 	`${size} MB`,
+	// );
 	const allDecks: readonly DeckStat[] = JSON.parse(allDecksStr);
-	console.log('all decks', allDecks.length);
+	// console.log('all decks', allDecks.length);
 	const deck = allDecks.find((deck: DeckStat) => deck.decklist.replaceAll('/', '-') === deckId);
-	console.log('deck', deck);
+	// console.log('deck', deck);
 	return deck;
 
 	// for (const playerClass of ALL_CLASSES) {

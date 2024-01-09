@@ -82,7 +82,7 @@ const getLastUpdate = (deckStats: readonly DeckStats[]): Date => {
 	if (!lastUpdate) {
 		throw new Error('could not find last update date');
 	}
-	console.log('loaded hourly deck data', deckStats.length, lastUpdate, lastUpdateInfo);
+	// console.log('loaded hourly deck data', deckStats.length, lastUpdate, lastUpdateInfo);
 	return lastUpdate;
 };
 
