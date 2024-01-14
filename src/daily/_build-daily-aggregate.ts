@@ -1,4 +1,4 @@
-import { S3, sleep } from '@firestone-hs/aws-lambda-utils';
+import { S3, logBeforeTimeout, sleep } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
 import AWS from 'aws-sdk';
@@ -21,6 +21,7 @@ const yesterdayDate = () => {
 };
 
 export default async (event, context: Context): Promise<any> => {
+	const cleanup = logBeforeTimeout(context);
 	await allCards.initializeCardsDb();
 
 	if (event.catchUp) {
@@ -37,7 +38,7 @@ export default async (event, context: Context): Promise<any> => {
 	const rankBracket: RankBracket = event.rankBracket;
 	const targetDate: string = event.targetDate || yesterdayDate();
 
-	console.log('aggregating daily data', format, rankBracket, targetDate);
+	// console.log('aggregating daily data', format, rankBracket, targetDate);
 	const dailyDeckStats: readonly DeckStat[] = await mergeAllHourlyStatsForTheDay(format, rankBracket, targetDate);
 	if (!dailyDeckStats?.length) {
 		console.warn('no deck stats for', format, rankBracket, targetDate);
@@ -63,8 +64,9 @@ export default async (event, context: Context): Promise<any> => {
 		);
 		throw new Error('could not find last update date');
 	}
-	console.log('loaded daily deck data', format, dailyDeckStats.length, lastUpdate, lastUpdateInfo);
+	// console.log('loaded daily deck data', format, dailyDeckStats.length, lastUpdate, lastUpdateInfo);
 	await persistData(dailyDeckStats, lastUpdate, format, rankBracket, targetDate);
+	cleanup();
 };
 
 const dispatchFormatEvents = async (context: Context, event: any) => {
@@ -80,7 +82,7 @@ const dispatchFormatEvents = async (context: Context, event: any) => {
 	];
 	for (const format of allFormats) {
 		for (const rankBracket of allRankBracket) {
-			console.log('dispatching events for format', format);
+			// console.log('dispatching events for format', format);
 			const newEvent = {
 				rankBracket: rankBracket,
 				targetDate: event.targetDate,

@@ -1,4 +1,4 @@
-import { S3, getConnection, getConnectionReadOnly } from '@firestone-hs/aws-lambda-utils';
+import { S3, getConnection, getConnectionReadOnly, logBeforeTimeout } from '@firestone-hs/aws-lambda-utils';
 import { ALL_CLASSES } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
 import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../common/config';
@@ -9,6 +9,7 @@ export const s3 = new S3();
 // Build a request handler for a GET request on AWS Lambda
 // URL is base/:format/:rank/:timePeriod/:deckId
 export default async (event, context: Context): Promise<any> => {
+	const cleanup = logBeforeTimeout(context);
 	// console.log('handling event', event);
 	const rawPath: string = event.rawPath;
 	const path = rawPath.startsWith('//') ? rawPath.substring(2) : rawPath.substring(1);
@@ -59,6 +60,7 @@ export default async (event, context: Context): Promise<any> => {
 	}
 
 	await updateDeckInDb(format, rank, timePeriod, deckId, deck);
+	cleanup();
 	return {
 		statusCode: 200,
 		body: JSON.stringify(deck),

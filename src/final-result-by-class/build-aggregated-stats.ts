@@ -1,4 +1,10 @@
-import { S3, getConnectionReadOnly, getLastConstructedPatch, sleep } from '@firestone-hs/aws-lambda-utils';
+import {
+	S3,
+	getConnectionReadOnly,
+	getLastConstructedPatch,
+	logBeforeTimeout,
+	sleep,
+} from '@firestone-hs/aws-lambda-utils';
 import { ALL_CLASSES, AllCardsService } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
 import AWS from 'aws-sdk';
@@ -13,6 +19,7 @@ export const s3 = new S3();
 const lambda = new AWS.Lambda();
 
 export default async (event, context: Context): Promise<any> => {
+	const cleanup = logBeforeTimeout(context);
 	await allCards.initializeCardsDb();
 
 	if (!event.format) {
@@ -88,6 +95,7 @@ export default async (event, context: Context): Promise<any> => {
 	// console.time('persistData');
 	const shouldPersistDetailedDecks = new Date().getHours() % 12 === 0;
 	await persistData(archetypeStats, deckStats, lastUpdate, rankBracket, timePeriod, format, playerClass);
+	cleanup();
 	// console.timeEnd('persistData');
 };
 
