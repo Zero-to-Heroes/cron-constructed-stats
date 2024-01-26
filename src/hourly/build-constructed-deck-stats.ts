@@ -33,8 +33,13 @@ export default async (event, context: Context): Promise<any> => {
 	const cleanup = logBeforeTimeout(context);
 	await allCards.initializeCardsDb();
 
+	if (event.catchUp) {
+		await dispatchCatchUpEvents(context, +event.catchUp);
+		return;
+	}
+
 	if (!event.format) {
-		await dispatchFormatEvents(context);
+		await dispatchFormatEvents(context, event);
 		return;
 	}
 	if (!event.rankBracket) {
@@ -72,14 +77,8 @@ export default async (event, context: Context): Promise<any> => {
 	return { statusCode: 200, body: null };
 };
 
-const dispatchFormatEvents = async (context: Context) => {
-	// Start from the start of the current hour
-	const processStartDate = new Date();
-	processStartDate.setMinutes(0);
-	processStartDate.setSeconds(0);
-	processStartDate.setMilliseconds(0);
-	processStartDate.setHours(processStartDate.getHours() - 1);
-	// console.log('processStartDate', processStartDate);
+const dispatchFormatEvents = async (context: Context, event) => {
+	const processStartDate = buildProcessStartDate(event);
 	// End one hour later
 	const processEndDate = new Date(processStartDate);
 	processEndDate.setHours(processEndDate.getHours() + 1);
@@ -112,6 +111,21 @@ const dispatchFormatEvents = async (context: Context) => {
 		// console.log('\tinvocation result', result);
 		await sleep(50);
 	}
+};
+
+const buildProcessStartDate = (event): Date => {
+	if (event?.targetDate) {
+		const targetDate = new Date(event.targetDate);
+		return targetDate;
+	}
+
+	// Start from the start of the current hour
+	const processStartDate = new Date();
+	processStartDate.setMinutes(0);
+	processStartDate.setSeconds(0);
+	processStartDate.setMilliseconds(0);
+	processStartDate.setHours(processStartDate.getHours() - 1);
+	return processStartDate;
 };
 
 const dispatchEvents = async (context: Context, format: GameFormat, startDate: string, endDate: string) => {
@@ -157,4 +171,42 @@ const dispatchEvents = async (context: Context, format: GameFormat, startDate: s
 		await sleep(50);
 	}
 	// }
+};
+
+const dispatchCatchUpEvents = async (context: Context, daysInThePast: number) => {
+	// Build a list of hours for the last `daysInThePast` days, in the format YYYY-MM-ddTHH:mm:ss.sssZ
+	const now = new Date();
+	const hours = [];
+	for (let i = 0; i < 24 * daysInThePast; i++) {
+		const baseDate = new Date(now);
+		baseDate.setMinutes(0);
+		baseDate.setSeconds(0);
+		baseDate.setMilliseconds(0);
+		const hour = new Date(baseDate.getTime() - i * 60 * 60 * 1000);
+		hours.push(hour.toISOString());
+	}
+
+	for (const targetDate of hours) {
+		console.log('dispatching catch-up for date', targetDate);
+		const newEvent = {
+			targetDate: targetDate,
+		};
+		const params = {
+			FunctionName: context.functionName,
+			InvocationType: 'Event',
+			LogType: 'Tail',
+			Payload: JSON.stringify(newEvent),
+		};
+		// console.log('\tinvoking lambda', params);
+		const result = await lambda
+			.invoke({
+				FunctionName: context.functionName,
+				InvocationType: 'Event',
+				LogType: 'Tail',
+				Payload: JSON.stringify(newEvent),
+			})
+			.promise();
+		// console.log('\tinvocation result', result);
+		await sleep(50);
+	}
 };

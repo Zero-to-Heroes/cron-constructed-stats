@@ -16,6 +16,10 @@ export const mergeDeckStatsData = (sortedData: DeckStat[], timePeriod: TimePerio
 	let stat: DeckStat = null;
 	let decksProcessed = 0;
 	while ((stat = sortedData.pop()) != null) {
+		if (stat.cardsData.some((d) => !d.cardId)) {
+			console.error('invalid card data, ignoring stat altogether', stat.lastUpdate);
+			continue;
+		}
 		if (currentDecklist === null || stat.decklist !== currentDecklist) {
 			if (currentStat !== null) {
 				currentStat.cardsData = mergeCardsData(cardsData);

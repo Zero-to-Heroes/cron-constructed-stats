@@ -154,8 +154,9 @@ const performRowsProcessing = async (
 				const uploaded = await processRows(toUpload, multipartUpload);
 				rowCount += uploaded;
 				console.log('processed rows', uploaded, rowCount);
-				// connection.resume();
-				await multipartUpload.completeMultipart();
+				if (rowCount > 0) {
+					await multipartUpload.completeMultipart();
+				}
 				resolve();
 			});
 	});

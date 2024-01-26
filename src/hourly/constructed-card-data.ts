@@ -10,6 +10,10 @@ export const buildCardsDataForDeck = (rows: readonly ConstructedMatchStatDbRow[]
 	const allDeckCards = Object.keys(refMatchAnalysis.cardsAnalysis);
 	const consolidatedData: ConstructedCardData[] = [];
 	for (const card of refMatchAnalysis.cardsAnalysis) {
+		if (!card.cardId) {
+			console.error('missing card id', refRow.playerDecklist, refRow.reviewId, card);
+			throw new Error('Missing card id');
+		}
 		consolidatedData.push({
 			cardId: card.cardId,
 			inStartingDeck: 0,

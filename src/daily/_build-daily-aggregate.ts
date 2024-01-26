@@ -25,7 +25,7 @@ export default async (event, context: Context): Promise<any> => {
 	await allCards.initializeCardsDb();
 
 	if (event.catchUp) {
-		await dispatchCatchUpEvents(context, event);
+		await dispatchCatchUpEvents(context, +event.catchUp);
 		return;
 	}
 
@@ -109,11 +109,10 @@ const dispatchFormatEvents = async (context: Context, event: any) => {
 	}
 };
 
-const dispatchCatchUpEvents = async (context: Context, event: any) => {
+const dispatchCatchUpEvents = async (context: Context, numberOfDays: number) => {
 	// Build a list of days for the last 30 days, in the format YYYY-MM-dd
 	const now = new Date();
 	const days = [];
-	const numberOfDays = 30;
 	for (let i = 0; i < numberOfDays; i++) {
 		const day = new Date(now.setDate(now.getDate() - 1));
 		const year = day.getFullYear();
