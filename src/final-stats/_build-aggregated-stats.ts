@@ -2,7 +2,7 @@ import { S3, logBeforeTimeout, sleep } from '@firestone-hs/aws-lambda-utils';
 import { ALL_CLASSES, AllCardsService } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
 import AWS from 'aws-sdk';
-import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../common/config';
+import { ALL_FORMATS, DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../common/config';
 import { ArchetypeStats, DeckStats, GameFormat, RankBracket, TimePeriod } from '../model';
 import { mergeArchetypes } from './archetypes-rebuild';
 import { mergeDecks } from './deck-stats-rebuild';
@@ -89,7 +89,7 @@ const getLastUpdate = (deckStats: readonly DeckStats[]): Date => {
 };
 
 const dispatchFormatEvents = async (context: Context) => {
-	const allFormats: readonly GameFormat[] = ['standard', 'wild', 'twist'];
+	const allFormats: readonly GameFormat[] = ALL_FORMATS;
 	// const allFormats: readonly GameFormat[] = ['standard'];
 	for (const format of allFormats) {
 		console.log('dispatching events for format', format);

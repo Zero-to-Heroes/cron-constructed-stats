@@ -2,6 +2,7 @@ import { S3, logBeforeTimeout, sleep } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
 import AWS from 'aws-sdk';
+import { ALL_FORMATS } from '../common/config';
 import { DeckStat, GameFormat, RankBracket } from '../model';
 import { mergeAllHourlyStatsForTheDay } from './data-aggregation-deck';
 import { persistData } from './s3-saver';
@@ -70,7 +71,7 @@ export default async (event, context: Context): Promise<any> => {
 };
 
 const dispatchFormatEvents = async (context: Context, event: any) => {
-	const allFormats: readonly GameFormat[] = ['standard', 'wild', 'twist'];
+	const allFormats: readonly GameFormat[] = ALL_FORMATS;
 	const allRankBracket: readonly RankBracket[] = [
 		'top-2000-legend',
 		'legend',

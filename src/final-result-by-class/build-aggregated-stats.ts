@@ -9,6 +9,7 @@ import { ALL_CLASSES, AllCardsService } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { loadArchetypes } from '../archetypes';
+import { ALL_FORMATS } from '../common/config';
 import { ArchetypeStat, DeckStat, GameFormat, RankBracket, TimePeriod } from '../model';
 import { buildArchetypeStats } from './archetypes-rebuild';
 import { buildDeckStatsWithoutArchetypeInfo, enhanceDeckStats } from './deck-stats-rebuild';
@@ -114,7 +115,7 @@ const getLastUpdate = (deckStats: readonly DeckStat[]): Date => {
 };
 
 const dispatchFormatEvents = async (context: Context) => {
-	const allFormats: readonly GameFormat[] = ['standard', 'wild', 'twist'];
+	const allFormats: readonly GameFormat[] = ALL_FORMATS;
 	// const allFormats: readonly GameFormat[] = ['standard'];
 	for (const format of allFormats) {
 		console.log('dispatching events for format', format);

@@ -5,6 +5,7 @@ import { S3, logBeforeTimeout, sleep } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
 import AWS from 'aws-sdk';
+import { ALL_FORMATS } from '../common/config';
 import { ConstructedMatchStatDbRow, DeckStat, GameFormat, RankBracket } from '../model';
 import { buildDeckStats } from './constructed-deck-stats';
 import { isCorrectRank } from './constructed-match-stats';
@@ -83,7 +84,7 @@ const dispatchFormatEvents = async (context: Context, event) => {
 	const processEndDate = new Date(processStartDate);
 	processEndDate.setHours(processEndDate.getHours() + 1);
 
-	const allFormats: readonly GameFormat[] = ['standard', 'wild', 'twist'];
+	const allFormats: readonly GameFormat[] = ALL_FORMATS;
 	// const allFormats: readonly GameFormat[] = ['standard'];
 	for (const format of allFormats) {
 		console.log('dispatching events for format', format);
