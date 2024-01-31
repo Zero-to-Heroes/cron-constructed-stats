@@ -12,6 +12,7 @@ export const buildArchetypeStats = (
 	refArchetypes: readonly Archetype[],
 	dailyDeckData: readonly DeckStat[],
 	allCards: AllCardsService,
+	debug = false,
 ): readonly ArchetypeStat[] => {
 	// console.time('groupBy');
 	const groupedByArchetype = groupByFunction((deckStat: DeckStat) => deckStat.archetypeId)(dailyDeckData);
@@ -23,14 +24,20 @@ export const buildArchetypeStats = (
 				refArchetypes.find((arch) => arch.id === parseInt(archetypeId)),
 				groupedByArchetype[archetypeId],
 				allCards,
+				debug,
 			),
 		)
 		.filter((a) => a.totalGames > 0);
 	return archetypeStats;
 };
 
-const buildArchetypeStat = (archetype: Archetype, archetypeDecks: readonly DeckStat[], allCards): ArchetypeStat => {
-	const debug = archetype.id == 761; // highlander shaman
+const buildArchetypeStat = (
+	archetype: Archetype,
+	archetypeDecks: readonly DeckStat[],
+	allCards,
+	debug = false,
+): ArchetypeStat => {
+	debug = debug && archetype.id === 1691; // sludge warlock
 	// if (debug) {
 	// 	// console.time('buildArchetypeStatsForArchetype');
 	// 	console.log('building stats for archetype', archetype.id, archetypeDecks.length);
@@ -40,6 +47,7 @@ const buildArchetypeStat = (archetype: Archetype, archetypeDecks: readonly DeckS
 	const totalWins: number = archetypeDecks.flatMap((d) => d.totalWins).reduce((a, b) => a + b, 0);
 	const winrate: number = totalWins / totalGames;
 	const coreCards: readonly string[] = isOther(archetype.archetype) ? [] : buildCoreCards(archetypeDecks, debug);
+	// debug && console.debug('totalGames', totalGames);
 	const cardsData: readonly ConstructedCardData[] = buildCardsDataForArchetype(archetypeDecks, debug);
 	const matchupInfo: readonly ConstructedMatchupInfo[] = buildMatchupInfoForArchetype(archetypeDecks);
 	const result: ArchetypeStat = {

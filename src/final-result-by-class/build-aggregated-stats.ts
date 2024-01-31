@@ -67,10 +67,12 @@ export default async (event, context: Context): Promise<any> => {
 
 	// console.time('archetypeStats');
 	// console.log('memory before buildArchetypeStats', formatMemoryUsage(process.memoryUsage()));
+	// const debug = format === 'standard' && timePeriod === 'last-patch' && rankBracket === 'all';
 	const archetypeStats: readonly ArchetypeStat[] = buildArchetypeStats(
 		archetypes,
 		deckStatsWithoutArchetypeInfo,
 		allCards,
+		// debug,
 	);
 	// console.timeEnd('archetypeStats');
 	// console.log(

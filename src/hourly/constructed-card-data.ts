@@ -71,11 +71,23 @@ export const buildCardsDataForArchetype = (
 	for (const deck of deckStats) {
 		let previousCardId = null;
 		const cardsData = [...deck.cardsData].sort((a, b) => (a.cardId > b.cardId ? 1 : -1));
+		// debug && console.debug('deck', deck.totalGames);
 		for (const cardData of cardsData) {
 			const isFirstDataCopy = !previousCardId || previousCardId !== cardData.cardId;
 			const existingDataContainer = cardsDataMap[cardData.cardId] ?? [];
 			cardsDataMap[cardData.cardId] = existingDataContainer;
 			let existingData: ConstructedCardData = existingDataContainer[isFirstDataCopy ? 0 : 1];
+			// debug &&
+			// 	cardData.cardId === 'WW_043' &&
+			// 	console.debug(
+			// 		'isFirstDataCopy',
+			// 		isFirstDataCopy,
+			// 		cardData.cardId,
+			// 		deck.totalGames,
+			// 		cardData.inStartingDeck,
+			// 		existingDataContainer,
+			// 		cardData,
+			// 	);
 			if (!existingData) {
 				existingData = {
 					cardId: cardData.cardId,
