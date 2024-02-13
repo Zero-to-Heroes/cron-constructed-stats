@@ -27,8 +27,10 @@ export const buildCardsDataForDeck = (rows: readonly ConstructedMatchStatDbRow[]
 		});
 	}
 
-	// const debug =
 	for (const row of rows) {
+		const debug =
+			row.playerDecklist ===
+			'AAECAf0GBOWwBPnGBfTIBYCeBg3HwgXIwgXdwgXX+gXm/wWFjgaVlwaWlwaXlwaEngaroAb3owamqAYAAA==';
 		const matchAnalysis: MatchAnalysis = JSON.parse(row.matchAnalysis);
 		const deckCards = Object.keys(matchAnalysis.cardsAnalysis);
 		// All cards for a single deck should always be the same

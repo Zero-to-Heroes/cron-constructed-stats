@@ -27,13 +27,17 @@ export const mergeDeckStatsData = (sortedData: DeckStat[], timePeriod: TimePerio
 				currentStat.winrate =
 					currentStat.totalGames === 0 ? null : round(currentStat.totalWins / currentStat.totalGames, 4);
 				result.push(currentStat);
-				// if (debug && currentStat.archetypeId === 761) {
-				// 	console.log(
-				// 		'processed highliander shaman',
-				// 		currentStat.cardsData.filter((d) => d.cardId === 'WW_0700'),
-				// 		cardsData.filter((d) => d.cardId === 'WW_0700'),
-				// 	);
-				// }
+
+				// Sanity checks
+				if (currentStat.cardsData.some((d) => d.inStartingDeck !== currentStat.totalGames)) {
+					console.error(currentStat);
+					throw new Error('Invalid cards data for deck: totalGames');
+				}
+				if (currentStat.cardsData.some((d) => d.wins !== currentStat.totalWins)) {
+					console.error(currentStat);
+					throw new Error('Invalid cards data for deck: wins');
+				}
+
 				cardsData = [];
 				matchupInfo = [];
 				decksProcessed++;

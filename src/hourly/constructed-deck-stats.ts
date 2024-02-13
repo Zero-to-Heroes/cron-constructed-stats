@@ -56,10 +56,31 @@ const buildDeckStatsForRankBracket = (
 			groupedByDeck[decklist] = null;
 			const totalGames: number = deckRows.length;
 			const totalWins: number = deckRows.filter((row) => row.result === 'won').length;
-			const winrate: number = totalWins / totalGames;
+			// const winrate: number = totalWins / totalGames;
 			// const archetypeStat = archetypes.find((arch) => arch.id === deckRows[0].playerArchetypeId);
 			const cardsData = buildCardsDataForDeck(deckRows);
 			const matchupInfo = buildMatchupInfoForDeck(deckRows);
+
+			// Sanity checks
+			if (cardsData.some((d) => d.inStartingDeck !== totalGames)) {
+				console.error(
+					decklist,
+					deckRows.length,
+					totalGames,
+					cardsData.filter((d) => d.inStartingDeck !== totalGames),
+				);
+				throw new Error('Invalid cards data for deck: totalGames');
+			}
+			if (cardsData.some((d) => d.wins !== totalWins)) {
+				console.error(
+					decklist,
+					deckRows.length,
+					totalWins,
+					cardsData.filter((d) => d.wins !== totalWins),
+				);
+				throw new Error('Invalid cards data for deck: wins');
+			}
+
 			try {
 				// const cardVariations = buildCardVariations(decklist, archetypeStat?.coreCards ?? [], allCards);
 				const result: DeckStat = {
