@@ -16,10 +16,20 @@ export const mergeDeckStatsData = (sortedData: DeckStat[], timePeriod: TimePerio
 	let stat: DeckStat = null;
 	let decksProcessed = 0;
 	while ((stat = sortedData.pop()) != null) {
-		if (stat.cardsData.some((d) => !d.cardId)) {
-			console.error('invalid card data, ignoring stat altogether', stat.lastUpdate);
+		if (stat.cardsData.some((d) => !d?.cardId)) {
+			console.warn('invalid card data, ignoring stat altogether', stat.lastUpdate);
 			continue;
 		}
+		// It's grouped by card, so each card can have twice as many games as the total games
+		if (stat.cardsData.some((d) => d.inStartingDeck % stat.totalGames != 0)) {
+			console.error(
+				stat.totalGames,
+				stat.cardsData.filter((d) => d.inStartingDeck % stat.totalGames != 0),
+			);
+			console.error('Invalid cards data for single deck: totalGames');
+			throw new Error('Invalid cards data for single deck: totalGames');
+		}
+
 		if (currentDecklist === null || stat.decklist !== currentDecklist) {
 			if (currentStat !== null) {
 				currentStat.cardsData = mergeCardsData(cardsData);
@@ -29,12 +39,26 @@ export const mergeDeckStatsData = (sortedData: DeckStat[], timePeriod: TimePerio
 				result.push(currentStat);
 
 				// Sanity checks
-				if (currentStat.cardsData.some((d) => d.inStartingDeck !== currentStat.totalGames)) {
-					console.error(currentStat);
+				if (
+					currentStat.totalGames != 0 &&
+					currentStat.cardsData.some((d) => d.inStartingDeck % currentStat.totalGames != 0)
+				) {
+					console.error(
+						currentStat.totalGames,
+						currentStat.cardsData.filter((d) => d.inStartingDeck % currentStat.totalGames != 0),
+						currentStat,
+					);
 					throw new Error('Invalid cards data for deck: totalGames');
 				}
-				if (currentStat.cardsData.some((d) => d.wins !== currentStat.totalWins)) {
-					console.error(currentStat);
+				if (
+					currentStat.totalWins !== 0 &&
+					currentStat.cardsData.some((d) => d.wins % currentStat.totalWins !== 0)
+				) {
+					console.error(
+						currentStat.totalWins,
+						currentStat.cardsData.filter((d) => d.wins % currentStat.totalWins !== 0),
+						currentStat,
+					);
 					throw new Error('Invalid cards data for deck: wins');
 				}
 

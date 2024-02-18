@@ -1,7 +1,6 @@
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService } from '@firestone-hs/reference-data';
 import { allClasses } from '../common/utils';
-import { extractCardsForList } from '../hs-utils';
 import { ConstructedMatchStatDbRow, ConstructedMatchupInfo, DeckStat, GameFormat, RankBracket } from '../model';
 import { buildCardsDataForDeck } from './constructed-card-data';
 
@@ -58,28 +57,29 @@ const buildDeckStatsForRankBracket = (
 			const totalWins: number = deckRows.filter((row) => row.result === 'won').length;
 			// const winrate: number = totalWins / totalGames;
 			// const archetypeStat = archetypes.find((arch) => arch.id === deckRows[0].playerArchetypeId);
-			const cardsData = buildCardsDataForDeck(deckRows);
+			const cardsData = buildCardsDataForDeck(deckRows, allCards);
 			const matchupInfo = buildMatchupInfoForDeck(deckRows);
 
 			// Sanity checks
-			if (cardsData.some((d) => d.inStartingDeck !== totalGames)) {
-				console.error(
-					decklist,
-					deckRows.length,
-					totalGames,
-					cardsData.filter((d) => d.inStartingDeck !== totalGames),
-				);
-				throw new Error('Invalid cards data for deck: totalGames');
-			}
-			if (cardsData.some((d) => d.wins !== totalWins)) {
-				console.error(
-					decklist,
-					deckRows.length,
-					totalWins,
-					cardsData.filter((d) => d.wins !== totalWins),
-				);
-				throw new Error('Invalid cards data for deck: wins');
-			}
+			// Can't do that anymore, since we filter out the rows where the cards data misses some card ids
+			// if (cardsData.some((d) => d.inStartingDeck !== totalGames)) {
+			// 	console.error(
+			// 		decklist,
+			// 		deckRows.length,
+			// 		totalGames,
+			// 		cardsData.filter((d) => d.inStartingDeck !== totalGames),
+			// 	);
+			// 	throw new Error('Invalid cards data for deck: totalGames');
+			// }
+			// if (cardsData.some((d) => d.wins !== totalWins)) {
+			// 	console.error(
+			// 		decklist,
+			// 		deckRows.length,
+			// 		totalWins,
+			// 		cardsData.filter((d) => d.wins !== totalWins),
+			// 	);
+			// 	throw new Error('Invalid cards data for deck: wins');
+			// }
 
 			try {
 				// const cardVariations = buildCardVariations(decklist, archetypeStat?.coreCards ?? [], allCards);
@@ -130,38 +130,4 @@ const buildMatchupInfoForDeck = (rows: readonly ConstructedMatchStatDbRow[]): re
 		};
 		return result;
 	});
-};
-
-export const buildCardVariations = (
-	decklist: string,
-	coreCards: readonly string[],
-	allCards: AllCardsService,
-): {
-	added: readonly string[];
-	removed: readonly string[];
-} => {
-	const result: {
-		added: string[];
-		removed: string[];
-	} = {
-		added: [],
-		removed: [],
-	};
-	const deckCards = extractCardsForList(decklist, allCards);
-	if (!deckCards?.length) {
-		throw new Error('Invalid decklist: ' + decklist);
-	}
-
-	const archetypeCards = [...coreCards];
-	for (const card of deckCards) {
-		if (!archetypeCards.includes(card)) {
-			result.added.push(card);
-		} else {
-			archetypeCards.splice(archetypeCards.indexOf(card), 1);
-		}
-	}
-
-	result.removed = archetypeCards;
-
-	return result;
 };

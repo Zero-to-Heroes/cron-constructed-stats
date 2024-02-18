@@ -53,7 +53,7 @@ export const readRowsFromS3 = async (
 			.on('end', () => {
 				const finalResult = result.filter((row) => !!row);
 				console.log('stream end', result.length, finalResult.length);
-				console.log('parsing errors', parseErrors, 'and successes', totalParsed);
+				console.log('parsing failures', parseErrors, 'and successes', totalParsed);
 				resolve(finalResult);
 			});
 	});

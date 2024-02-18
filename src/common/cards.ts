@@ -33,7 +33,9 @@ export const mergeCardsData = (inputCardsData: ConstructedCardData[]): readonly 
 		currentCardData.drawn += cardData.drawn;
 		currentCardData.drawnThenWin += cardData.drawnThenWin;
 	}
-	result.push(currentCardData);
+	if (currentCardData !== null) {
+		result.push(currentCardData);
+	}
 	return result;
 	// const groupedByCardId = groupByFunction((a: ConstructedCardData) => a.cardId)(sortedCardsData);
 	// return Object.values(groupedByCardId).map((group) => mergeCardData(group));

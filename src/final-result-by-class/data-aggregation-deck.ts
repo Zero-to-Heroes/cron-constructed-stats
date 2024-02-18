@@ -2,8 +2,8 @@ import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService } from '@firestone-hs/reference-data';
 import { mergeCardsData } from '../common/cards';
 import { mergeMatchupInfo } from '../common/matchup';
-import { buildCardVariations } from '../hourly/constructed-deck-stats';
 import { ArchetypeStat, ArchetypeStats, DeckStat, DeckStats } from '../model';
+import { buildCardVariations } from './utils';
 
 export const aggregateDeckData = (
 	dailyData: readonly DeckStats[],

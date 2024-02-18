@@ -1,10 +1,10 @@
 import { AllCardsService } from '@firestone-hs/reference-data';
 import { DECK_STATS_BUCKET } from '../common/config';
 import { mergeDeckStatsData } from '../common/decks';
-import { buildCardVariations } from '../hourly/constructed-deck-stats';
 import { ArchetypeStat, DeckStat, DeckStats, GameFormat, RankBracket, TimePeriod } from '../model';
 import { s3 } from './build-aggregated-stats';
 import { getFileKeysToLoad } from './file-keys';
+import { buildCardVariations } from './utils';
 
 export const buildDeckStatsWithoutArchetypeInfo = async (
 	format: GameFormat,

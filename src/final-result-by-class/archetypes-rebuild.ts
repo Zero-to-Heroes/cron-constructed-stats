@@ -3,8 +3,6 @@ import { AllCardsService } from '@firestone-hs/reference-data';
 import { Archetype } from '../archetypes';
 import { CORE_CARD_THRESHOLD } from '../common/config';
 import { allClasses } from '../common/utils';
-import { isOther } from '../hourly/archetype-stats';
-import { buildCardsDataForArchetype } from '../hourly/constructed-card-data';
 import { ArchetypeStat, ConstructedCardData, ConstructedMatchupInfo, DeckStat } from '../model';
 import { round } from '../utils';
 
@@ -120,4 +118,117 @@ const buildMatchupInfoForArchetype = (deckStats: readonly DeckStat[]): readonly 
 		};
 		return result;
 	});
+};
+
+const buildCardsDataForArchetype = (deckStats: readonly DeckStat[], debug = false): readonly ConstructedCardData[] => {
+	const cardsDataMap: { [cardId: string]: ConstructedCardData[] } = {};
+	for (const deck of deckStats) {
+		let previousCardId = null;
+		const cardsData = [...deck.cardsData].sort((a, b) => (a.cardId > b.cardId ? 1 : -1));
+		// debug && console.debug('deck', deck.totalGames);
+		for (const cardData of cardsData) {
+			const isFirstDataCopy = !previousCardId || previousCardId !== cardData.cardId;
+			const existingDataContainer = cardsDataMap[cardData.cardId] ?? [];
+			cardsDataMap[cardData.cardId] = existingDataContainer;
+			let existingData: ConstructedCardData = existingDataContainer[isFirstDataCopy ? 0 : 1];
+			// debug &&
+			// 	cardData.cardId === 'WW_043' &&
+			// 	console.debug(
+			// 		'isFirstDataCopy',
+			// 		isFirstDataCopy,
+			// 		cardData.cardId,
+			// 		deck.totalGames,
+			// 		cardData.inStartingDeck,
+			// 		existingDataContainer,
+			// 		cardData,
+			// 	);
+			if (!existingData) {
+				existingData = {
+					cardId: cardData.cardId,
+					inStartingDeck: 0,
+					wins: 0,
+					drawnBeforeMulligan: 0,
+					keptInMulligan: 0,
+					inHandAfterMulligan: 0,
+					inHandAfterMulliganThenWin: 0,
+					drawn: 0,
+					drawnThenWin: 0,
+				};
+				existingDataContainer.push(existingData);
+			}
+			existingData.inStartingDeck += cardData.inStartingDeck;
+			existingData.wins += cardData.wins;
+			existingData.drawnBeforeMulligan += cardData.drawnBeforeMulligan;
+			existingData.keptInMulligan += cardData.keptInMulligan;
+			existingData.inHandAfterMulligan += cardData.inHandAfterMulligan;
+			existingData.inHandAfterMulliganThenWin += cardData.inHandAfterMulliganThenWin;
+			existingData.drawn += cardData.drawn;
+			existingData.drawnThenWin += cardData.drawnThenWin;
+
+			previousCardId = cardData.cardId;
+		}
+	}
+	const result = Object.values(cardsDataMap).flatMap((d) => d);
+	// debug && console.log('total cards', result.length, Object.values(cardsDataMap).flatMap((d) => d).length);
+
+	// const deckCardIds: readonly { [cardId: string]: readonly string[] }[] = deckStats.map((d) =>
+	// 	groupByFunction((cardId: string) => cardId)(d.cardsData.map((c) => c.cardId)),
+	// );
+	// const uniqueCardIds = [...new Set(deckCardIds.flatMap((cards) => Object.keys(cards)))].sort();
+	// debug && console.log('uniqueCardIds', uniqueCardIds.length);
+	// debug && console.log('cardsDataMap uniqueCardIds', Object.keys(cardsDataMap).length);
+
+	return result;
+
+	// // The cards for each deck, with the number of copies in each
+	// debug && console.time('cards data - group by card');
+	// const deckCardIds: readonly { [cardId: string]: readonly string[] }[] = deckStats.map((d) =>
+	// 	groupByFunction((cardId: string) => cardId)(d.cardsData.map((c) => c.cardId)),
+	// );
+	// debug && console.timeEnd('cards data - group by card');
+
+	// debug && console.time('cards data - building cards list');
+	// const uniqueCardIds = [...new Set(deckCardIds.flatMap((cards) => Object.keys(cards)))].sort();
+	// const result: ConstructedCardData[] = [];
+	// for (const cardId of uniqueCardIds) {
+	// 	const maxCopies = Math.max(...deckCardIds.map((cards) => cards[cardId]?.length ?? 0));
+	// 	for (let i = 0; i < maxCopies; i++) {
+	// 		const archetypeCardData: ConstructedCardData = {
+	// 			cardId: cardId,
+	// 			inStartingDeck: 0,
+	// 			wins: 0,
+	// 			drawnBeforeMulligan: 0,
+	// 			keptInMulligan: 0,
+	// 			inHandAfterMulligan: 0,
+	// 			inHandAfterMulliganThenWin: 0,
+	// 			drawn: 0,
+	// 			drawnThenWin: 0,
+	// 		};
+	// 		result.push(archetypeCardData);
+
+	// 		const dataForDecks = deckStats.map((d) => d.cardsData.filter((c) => c.cardId === cardId));
+	// 		for (const data of dataForDecks) {
+	// 			const deckCardData = data[i];
+	// 			if (!deckCardData) {
+	// 				continue;
+	// 			}
+
+	// 			archetypeCardData.inStartingDeck += deckCardData.inStartingDeck;
+	// 			archetypeCardData.wins += deckCardData.wins;
+	// 			archetypeCardData.drawnBeforeMulligan += deckCardData.drawnBeforeMulligan;
+	// 			archetypeCardData.keptInMulligan += deckCardData.keptInMulligan;
+	// 			archetypeCardData.inHandAfterMulligan += deckCardData.inHandAfterMulligan;
+	// 			archetypeCardData.inHandAfterMulliganThenWin += deckCardData.inHandAfterMulliganThenWin;
+	// 			archetypeCardData.drawn += deckCardData.drawn;
+	// 			archetypeCardData.drawnThenWin += deckCardData.drawnThenWin;
+	// 		}
+	// 	}
+	// }
+	// debug && console.log('total cards', result.length);
+	// debug && console.timeEnd('cards data - building cards list');
+	// return result;
+};
+
+const isOther = (archetypeName: string): boolean => {
+	return allClasses.includes(archetypeName?.toLowerCase().replace('xl', '').replace('-', '').trim());
 };

@@ -1,76 +1,62 @@
-import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService } from '@firestone-hs/reference-data';
-import { Archetype } from '../archetypes';
 import { CORE_CARD_THRESHOLD } from '../common/config';
 import { allClasses } from '../common/utils';
 import { extractCardsForList } from '../hs-utils';
-import {
-	ArchetypeStat,
-	ConstructedCardData,
-	ConstructedMatchStatDbRow,
-	ConstructedMatchupInfo,
-	DeckStat,
-	GameFormat,
-} from '../model';
-import { buildCardsDataForArchetype } from './constructed-card-data';
+import { ConstructedMatchStatDbRow, ConstructedMatchupInfo, DeckStat } from '../model';
 
-export const buildArchetypes = (
-	rows: readonly ConstructedMatchStatDbRow[],
-	refArchetypes: readonly Archetype[],
-	format: GameFormat,
-	allCards: AllCardsService,
-): readonly ArchetypeStat[] => {
-	// console.log('building archetypes from rows', rows.length, rows[0]);
-	const groupedByArchetype = groupByFunction((row: ConstructedMatchStatDbRow) => row.playerArchetypeId)(rows);
-	// console.log('number of archetypes', Object.keys(groupedByArchetype).length);
-	const archetypeStats: readonly ArchetypeStat[] = Object.keys(groupedByArchetype).map((archetypeId) => {
-		const archetypeRows: readonly ConstructedMatchStatDbRow[] = groupedByArchetype[archetypeId];
-		const totalGames: number = archetypeRows.length;
-		const totalWins: number = archetypeRows.filter((row) => row.result === 'won').length;
-		// const winrate: number = totalWins / totalGames;
-		const archetype = refArchetypes.find((arch) => arch.id === parseInt(archetypeId));
-		const coreCards: readonly string[] = isOther(archetype.archetype)
-			? []
-			: buildCoreCards(archetypeRows, allCards);
-		const result: ArchetypeStat = {
-			id: +archetypeId,
-			name: archetype.archetype,
-			format: format,
-			heroCardClass: archetypeRows[0]?.playerClass,
-			totalGames: totalGames,
-			totalWins: totalWins,
-			coreCards: coreCards,
-			winrate: null,
-			cardsData: [],
-			matchupInfo: [],
-		};
-		return result;
-	});
-	return archetypeStats;
-};
+// export const buildArchetypes = (
+// 	rows: readonly ConstructedMatchStatDbRow[],
+// 	refArchetypes: readonly Archetype[],
+// 	format: GameFormat,
+// 	allCards: AllCardsService,
+// ): readonly ArchetypeStat[] => {
+// 	// console.log('building archetypes from rows', rows.length, rows[0]);
+// 	const groupedByArchetype = groupByFunction((row: ConstructedMatchStatDbRow) => row.playerArchetypeId)(rows);
+// 	// console.log('number of archetypes', Object.keys(groupedByArchetype).length);
+// 	const archetypeStats: readonly ArchetypeStat[] = Object.keys(groupedByArchetype).map((archetypeId) => {
+// 		const archetypeRows: readonly ConstructedMatchStatDbRow[] = groupedByArchetype[archetypeId];
+// 		const totalGames: number = archetypeRows.length;
+// 		const totalWins: number = archetypeRows.filter((row) => row.result === 'won').length;
+// 		// const winrate: number = totalWins / totalGames;
+// 		const archetype = refArchetypes.find((arch) => arch.id === parseInt(archetypeId));
+// 		const coreCards: readonly string[] = isOther(archetype.archetype)
+// 			? []
+// 			: buildCoreCards(archetypeRows, allCards);
+// 		const result: ArchetypeStat = {
+// 			id: +archetypeId,
+// 			name: archetype.archetype,
+// 			format: format,
+// 			heroCardClass: archetypeRows[0]?.playerClass,
+// 			totalGames: totalGames,
+// 			totalWins: totalWins,
+// 			coreCards: coreCards,
+// 			winrate: null,
+// 			cardsData: [],
+// 			matchupInfo: [],
+// 		};
+// 		return result;
+// 	});
+// 	return archetypeStats;
+// };
 
-export const enhanceArchetypeStats = (
-	archetypeStats: readonly ArchetypeStat[],
-	deckStats: readonly DeckStat[],
-): readonly ArchetypeStat[] => {
-	return archetypeStats.map((archetype) => {
-		const deckStatsForArchetype: readonly DeckStat[] = deckStats.filter(
-			(deckStat) => deckStat.archetypeId === archetype.id,
-		);
-		const cardsData: readonly ConstructedCardData[] = buildCardsDataForArchetype(deckStatsForArchetype);
-		const matchupInfo: readonly ConstructedMatchupInfo[] = buildMatchupInfoForArchetype(deckStatsForArchetype);
-		const result: ArchetypeStat = {
-			...archetype,
-			cardsData: cardsData.filter((d) => d.inStartingDeck > archetype.totalGames / 1000),
-			matchupInfo: matchupInfo,
-		};
-		return result;
-	});
-};
-
-export const isOther = (archetypeName: string): boolean => {
-	return allClasses.includes(archetypeName?.toLowerCase().replace('xl', '').replace('-', '').trim());
-};
+// export const enhanceArchetypeStats = (
+// 	archetypeStats: readonly ArchetypeStat[],
+// 	deckStats: readonly DeckStat[],
+// ): readonly ArchetypeStat[] => {
+// 	return archetypeStats.map((archetype) => {
+// 		const deckStatsForArchetype: readonly DeckStat[] = deckStats.filter(
+// 			(deckStat) => deckStat.archetypeId === archetype.id,
+// 		);
+// 		const cardsData: readonly ConstructedCardData[] = buildCardsDataForArchetype(deckStatsForArchetype);
+// 		const matchupInfo: readonly ConstructedMatchupInfo[] = buildMatchupInfoForArchetype(deckStatsForArchetype);
+// 		const result: ArchetypeStat = {
+// 			...archetype,
+// 			cardsData: cardsData.filter((d) => d.inStartingDeck > archetype.totalGames / 1000),
+// 			matchupInfo: matchupInfo,
+// 		};
+// 		return result;
+// 	});
+// };
 
 // Build the list of the cards that are present in all of the decks of the archetype
 // When a card appears multiple times in each deck, it should appear multiple times
