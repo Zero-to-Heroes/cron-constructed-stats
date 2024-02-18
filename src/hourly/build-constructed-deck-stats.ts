@@ -15,7 +15,7 @@ import { readRowsFromS3, saveRowsOnS3 } from './rows';
 // export const GAMES_THRESHOLD = 50;
 
 const allCards = new AllCardsService();
-export const s3 = new S3();
+const s3 = new S3();
 const lambda = new AWS.Lambda();
 
 // The date of the day before, in YYYY-MM-dd format
