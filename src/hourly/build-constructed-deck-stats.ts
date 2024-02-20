@@ -12,22 +12,9 @@ import { isCorrectRank } from './constructed-match-stats';
 import { saveDeckStats } from './persist-data';
 import { readRowsFromS3, saveRowsOnS3 } from './rows';
 
-// export const GAMES_THRESHOLD = 50;
-
 const allCards = new AllCardsService();
 const s3 = new S3();
 const lambda = new AWS.Lambda();
-
-// The date of the day before, in YYYY-MM-dd format
-// const yesterdayDate = () => {
-// 	const now = new Date();
-// 	const yesterday = new Date(now.setDate(now.getDate() - 1));
-// 	const year = yesterday.getFullYear();
-// 	const month = yesterday.getMonth() + 1;
-// 	const day = yesterday.getDate();
-// 	return `${year}-${month}-${day}`;
-// };
-// export let targetDate = yesterdayDate();
 
 // [1]: https://aws.amazon.com/blogs/compute/node-js-8-10-runtime-now-available-in-aws-lambda/
 export default async (event, context: Context): Promise<any> => {
@@ -54,7 +41,7 @@ export default async (event, context: Context): Promise<any> => {
 	const rankBracket = event.rankBracket;
 
 	console.log('reading rows from s3', format, rankBracket);
-	const allRows: readonly ConstructedMatchStatDbRow[] = await readRowsFromS3(format, startDate);
+	const allRows: readonly ConstructedMatchStatDbRow[] = await readRowsFromS3(format, startDate, s3);
 	const rows = allRows.filter((r) => r.format === format);
 	// console.log('\t', 'loaded rows', rows.length);
 	// const mysql = await getConnectionReadOnly();
@@ -85,7 +72,7 @@ const dispatchFormatEvents = async (context: Context, event) => {
 	processEndDate.setHours(processEndDate.getHours() + 1);
 
 	const allFormats: readonly GameFormat[] = ALL_FORMATS;
-	// const allFormats: readonly GameFormat[] = ['standard'];
+	// const allFormats: readonly GameFormat[] = ['twist'];
 	for (const format of allFormats) {
 		console.log('dispatching events for format', format);
 		const newEvent = {
@@ -131,7 +118,7 @@ const buildProcessStartDate = (event): Date => {
 
 const dispatchEvents = async (context: Context, format: GameFormat, startDate: string, endDate: string) => {
 	// console.log('saving rows for format', format);
-	await saveRowsOnS3(format, startDate, endDate);
+	await saveRowsOnS3(format, startDate, endDate, s3);
 
 	// console.log('dispatching events');
 	const allRankBracket: readonly RankBracket[] = [

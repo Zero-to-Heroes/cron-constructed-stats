@@ -1,65 +1,77 @@
-import { S3Multipart } from '@firestone-hs/aws-lambda-utils';
+import { S3, S3Multipart } from '@firestone-hs/aws-lambda-utils';
 import { S3 as S3AWS } from 'aws-sdk';
 import SecretsManager, { GetSecretValueRequest, GetSecretValueResponse } from 'aws-sdk/clients/secretsmanager';
 import { Connection, createPool } from 'mysql';
 import { Readable } from 'stream';
-import { WORKING_ROWS_FILE } from '../common/config';
+import { gzipSync } from 'zlib';
+import { DECK_STATS_BUCKET, WORKING_ROWS_FILE } from '../common/config';
 import { ConstructedMatchStatDbRow, GameFormat } from '../model';
-import { s3 } from './build-constructed-deck-stats';
 
 export const readRowsFromS3 = async (
 	format: GameFormat,
 	startDate: string,
+	s3: S3,
 ): Promise<readonly ConstructedMatchStatDbRow[]> => {
 	return new Promise<readonly ConstructedMatchStatDbRow[]>((resolve, reject) => {
 		const workingRowsFile = `${WORKING_ROWS_FILE.replace('%format%', format).replace('%time%', startDate)}`;
 		console.debug('reading rows from s3', workingRowsFile);
-		let parseErrors = 0;
-		let totalParsed = 0;
-		const stream: Readable = s3.readStream('static.zerotoheroes.com', workingRowsFile);
-		const result: ConstructedMatchStatDbRow[] = [];
-		let previousString = '';
-		let emptyRowsInARow = 0;
-		stream
-			.on('data', (chunk) => {
-				const str = Buffer.from(chunk).toString('utf-8');
-				const newStr = previousString + str;
-				const split = newStr.split('\n');
-				const rows: readonly ConstructedMatchStatDbRow[] = split.slice(0, split.length - 1).map((row) => {
-					try {
-						const result: ConstructedMatchStatDbRow = JSON.parse(row);
-						totalParsed++;
-						return result;
-					} catch (e) {
-						// logger.warn('could not parse row', row);
-						parseErrors++;
-					}
-				});
-				previousString = split[split.length - 1];
-				result.push(...rows);
+		try {
+			let parseErrors = 0;
+			let totalParsed = 0;
+			const stream: Readable = s3.readStream('static.zerotoheroes.com', workingRowsFile);
+			if (!stream) {
+				console.error('error while reading rows from S3', workingRowsFile);
+				resolve([]);
+				return;
+			}
 
-				// Do this to avoid errors in case the chunks are small compared to the row sizes
-				if (result.length === 0 && rows.length === 0) {
-					emptyRowsInARow++;
-				} else {
-					emptyRowsInARow = 0;
-				}
-				if (emptyRowsInARow > 50) {
-					console.error(newStr);
-					console.error(split);
-					throw new Error('Could not parse any row');
-				}
-			})
-			.on('end', () => {
-				const finalResult = result.filter((row) => !!row);
-				console.log('stream end', result.length, finalResult.length);
-				console.log('parsing failures', parseErrors, 'and successes', totalParsed);
-				resolve(finalResult);
-			});
+			const result: ConstructedMatchStatDbRow[] = [];
+			let previousString = '';
+			let emptyRowsInARow = 0;
+			stream
+				.on('data', (chunk) => {
+					const str = Buffer.from(chunk).toString('utf-8');
+					const newStr = previousString + str;
+					const split = newStr.split('\n');
+					const rows: readonly ConstructedMatchStatDbRow[] = split.slice(0, split.length - 1).map((row) => {
+						try {
+							const result: ConstructedMatchStatDbRow = JSON.parse(row);
+							totalParsed++;
+							return result;
+						} catch (e) {
+							// logger.warn('could not parse row', row);
+							parseErrors++;
+						}
+					});
+					previousString = split[split.length - 1];
+					result.push(...rows);
+
+					// Do this to avoid errors in case the chunks are small compared to the row sizes
+					if (result.length === 0 && rows.length === 0) {
+						emptyRowsInARow++;
+					} else {
+						emptyRowsInARow = 0;
+					}
+					if (emptyRowsInARow > 50) {
+						console.error(newStr);
+						console.error(split);
+						throw new Error('Could not parse any row');
+					}
+				})
+				.on('end', () => {
+					const finalResult = result.filter((row) => !!row);
+					console.log('stream end', result.length, finalResult.length);
+					console.log('parsing failures', parseErrors, 'and successes', totalParsed);
+					resolve(finalResult);
+				});
+		} catch (e) {
+			console.error('error while reading rows from S3', workingRowsFile, e);
+			resolve([]);
+		}
 	});
 };
 
-export const saveRowsOnS3 = async (format: GameFormat, startDate: string, endDate: string) => {
+export const saveRowsOnS3 = async (format: GameFormat, startDate: string, endDate: string, s3: S3) => {
 	console.log('will export rows to S3', format);
 	const secretRequest: GetSecretValueRequest = {
 		SecretId: 'rds-connection',
@@ -75,7 +87,7 @@ export const saveRowsOnS3 = async (format: GameFormat, startDate: string, endDat
 	});
 
 	try {
-		await performRowProcessIngPool(pool, format, startDate, endDate);
+		await performRowProcessIngPool(pool, format, startDate, endDate, s3);
 	} finally {
 		pool.end((err) => {
 			console.log('ending pool', err);
@@ -83,14 +95,14 @@ export const saveRowsOnS3 = async (format: GameFormat, startDate: string, endDat
 	}
 };
 
-const performRowProcessIngPool = async (pool: any, format: GameFormat, startDate: string, endDate: string) => {
+const performRowProcessIngPool = async (pool: any, format: GameFormat, startDate: string, endDate: string, s3: S3) => {
 	return new Promise<void>((resolve) => {
 		pool.getConnection(async (err, connection) => {
 			if (err) {
 				console.log('error with connection', err);
 				throw new Error('Could not connect to DB');
 			} else {
-				await performRowsProcessing(connection, format, startDate, endDate);
+				await performRowsProcessing(connection, format, startDate, endDate, s3);
 				connection.release();
 			}
 			resolve();
@@ -103,6 +115,7 @@ const performRowsProcessing = async (
 	format: GameFormat,
 	startDate: string,
 	endDate: string,
+	s3: S3,
 ) => {
 	const multipartUpload = new S3Multipart(new S3AWS());
 	const workingRowsFile = `${WORKING_ROWS_FILE.replace('%format%', format).replace('%time%', startDate)}`;
@@ -156,6 +169,11 @@ const performRowsProcessing = async (
 				console.log('processed rows', uploaded, rowCount);
 				if (rowCount > 0) {
 					await multipartUpload.completeMultipart();
+				} else {
+					const gzippedResult = gzipSync(JSON.stringify([]));
+					const destination = `${WORKING_ROWS_FILE.replace('%format%', format).replace('%time%', startDate)}`;
+					// console.log('writing to ', destination);
+					await s3.writeFile(gzippedResult, DECK_STATS_BUCKET, destination, 'application/json', 'gzip');
 				}
 				resolve();
 			});

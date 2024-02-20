@@ -1,10 +1,5 @@
 import { MatchAnalysis } from '@firestone-hs/assign-constructed-archetype';
-import {
-	AllCardsService,
-	GameFormatString,
-	formatFormatReverse,
-	getBaseCardIdForDeckbuilding,
-} from '@firestone-hs/reference-data';
+import { AllCardsService, GameFormat, GameFormatString, formatFormatReverse } from '@firestone-hs/reference-data';
 import { ConstructedCardData, ConstructedMatchStatDbRow } from '../model';
 import { arraysEqual } from '../utils';
 
@@ -13,23 +8,29 @@ import { arraysEqual } from '../utils';
 export const buildCardsDataForDeck = (
 	rows: readonly ConstructedMatchStatDbRow[],
 	allCards: AllCardsService,
-): readonly ConstructedCardData[] => {
+): { data: readonly ConstructedCardData[]; validRows: readonly ConstructedMatchStatDbRow[] } => {
 	let allDeckCards: string[] = [];
-	const consolidatedData: ConstructedCardData[] = [];
+	let consolidatedData: ConstructedCardData[] = [];
+	const validRows: ConstructedMatchStatDbRow[] = [];
 	for (const row of rows) {
 		const matchAnalysis: MatchAnalysis = JSON.parse(row.matchAnalysis);
 		if (matchAnalysis.cardsAnalysis.some((c) => !c.cardId)) {
+			console.warn('incorrect input: corrput cardsAnalysis', matchAnalysis.cardsAnalysis);
 			continue;
 		}
 
+		const format = formatFormatReverse(row.format as GameFormatString);
 		if (!consolidatedData.length) {
-			populateRefData(consolidatedData, matchAnalysis, row.format, allCards);
-			allDeckCards = Object.keys(matchAnalysis.cardsAnalysis);
+			consolidatedData = populateRefData(matchAnalysis, format, allCards);
+			allDeckCards = consolidatedData.map((card) => card.cardId).sort((a, b) => a.localeCompare(b));
 		}
 
-		const deckCards = Object.keys(matchAnalysis.cardsAnalysis);
+		const deckCards = matchAnalysis.cardsAnalysis
+			.map((card) => baseCardId(card.cardId, format, allCards))
+			.sort((a, b) => a.localeCompare(b));
 		// All cards for a single deck should always be the same
 		if (!arraysEqual(deckCards, allDeckCards)) {
+			// Don't throw an error here, as the input could be corrupted, as so there's nothing we can do
 			console.error(`Mismatch in deck cards: ${deckCards} vs ${allDeckCards} for row ${row.id}`);
 			continue;
 		}
@@ -46,6 +47,7 @@ export const buildCardsDataForDeck = (
 			consolidatedCardData.drawn += analysis.drawnTurn > 0 ? 1 : 0;
 			consolidatedCardData.drawnThenWin += analysis.drawnTurn > 0 && row.result === 'won' ? 1 : 0;
 		}
+		validRows.push(row);
 	}
 
 	if (consolidatedData.some((data) => data.inStartingDeck !== rows.length)) {
@@ -58,23 +60,27 @@ export const buildCardsDataForDeck = (
 		);
 	}
 
-	return consolidatedData;
+	return { data: consolidatedData, validRows: validRows };
+};
+
+const baseCardId = (cardId: string, format: GameFormat, allCards: AllCardsService): string => {
+	return allCards.getBaseCardIdForDeckbuilding(cardId, format);
 };
 
 const populateRefData = (
-	consolidatedData: ConstructedCardData[],
 	matchAnalysis: MatchAnalysis,
-	format: GameFormatString,
+	format: GameFormat,
 	allCards: AllCardsService,
-) => {
+): ConstructedCardData[] => {
+	const result: ConstructedCardData[] = [];
 	for (const card of matchAnalysis.cardsAnalysis) {
 		if (!card.cardId) {
 			console.error('missing card id', card);
 			continue;
 			// throw new Error('Missing card id');
 		}
-		consolidatedData.push({
-			cardId: getBaseCardIdForDeckbuilding(card.cardId, formatFormatReverse(format), allCards),
+		result.push({
+			cardId: allCards.getBaseCardIdForDeckbuilding(card.cardId, format),
 			inStartingDeck: 0,
 			wins: 0,
 			drawnBeforeMulligan: 0,
@@ -85,4 +91,5 @@ const populateRefData = (
 			drawnThenWin: 0,
 		});
 	}
+	return result;
 };

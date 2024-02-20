@@ -19,7 +19,7 @@ export default async (event, context: Context): Promise<any> => {
 	const timePeriod = path.split('/')[2];
 	const encodedDeckId = path.split('/')[3];
 	const deckId = decodeURIComponent(encodedDeckId).replaceAll('/', '-');
-	console.debug('arguments', format, rank, timePeriod, deckId);
+	// console.debug('arguments', format, rank, timePeriod, deckId);
 	if (!format || !rank || !timePeriod || !deckId) {
 		return {
 			statusCode: 400,
@@ -98,7 +98,7 @@ const updateDeckInDb = async (format: string, rank: string, timePeriod: string, 
 	        deckData = '${JSON.stringify(updatedDeck)}',
 	        lastUpdateDate = NOW()
 	`;
-	console.debug('updating deck in db', deckId);
+	// console.debug('updating deck in db', deckId);
 	await mysql.query(query);
 	mysql.end();
 };
@@ -106,7 +106,7 @@ const updateDeckInDb = async (format: string, rank: string, timePeriod: string, 
 const readDeckFromS3 = async (format: string, rank: string, timePeriod: string, deckId: string): Promise<DeckStat> => {
 	const s3 = new S3();
 	const deckIdMap = {};
-	console.log('reading deck from S3', format, rank, timePeriod, deckId);
+	// console.log('reading deck from S3', format, rank, timePeriod, deckId);
 	await Promise.all(
 		ALL_CLASSES.map((playerClass) => {
 			const filename = `${DECK_STATS_KEY_PREFIX}/decks/${format}/${rank}/${timePeriod}/all-decks-ids-${playerClass}.gz.json`;

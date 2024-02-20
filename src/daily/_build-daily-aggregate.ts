@@ -72,6 +72,8 @@ export default async (event, context: Context): Promise<any> => {
 
 const dispatchFormatEvents = async (context: Context, event: any) => {
 	const allFormats: readonly GameFormat[] = ALL_FORMATS;
+	// const allFormats: readonly GameFormat[] = ['twist'];
+	// const allRankBracket: readonly RankBracket[] = ['all'];
 	const allRankBracket: readonly RankBracket[] = [
 		'top-2000-legend',
 		'legend',
