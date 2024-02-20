@@ -25,7 +25,7 @@ Resources:
                 - AmazonS3FullAccess
                 - AWSLambda_FullAccess
                 - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
-                # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
+                - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
             Tags:
                 LambdaName: cron-build-hourly-constructed-deck-stats
             Events:
@@ -54,7 +54,7 @@ Resources:
                 - AmazonS3FullAccess
                 - AWSLambda_FullAccess
                 - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
-                # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
+                - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
             Tags:
                 LambdaName: cron-build-daily-aggregate-deck-stats
             Events:
@@ -83,7 +83,7 @@ Resources:
                 - AmazonS3FullAccess
                 - AWSLambda_FullAccess
                 - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
-                # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
+                - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
             Tags:
                 LambdaName: cron-constructed-final-stats-by-class
                 #  TODO: trigger this after the hourly builds have been done, either via direct lambda invocation
