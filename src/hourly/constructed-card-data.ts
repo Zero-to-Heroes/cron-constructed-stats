@@ -34,6 +34,12 @@ export const buildCardsDataForDeck = (
 			console.error(`Mismatch in deck cards: ${deckCards} vs ${allDeckCards} for row ${row.id}`);
 			continue;
 		}
+		if (row.format === 'wild' && deckCards.includes('CS3_031')) {
+			console.error('Should not have this card', deckCards, row.playerDecklist);
+		}
+		if (row.format === 'standard' && deckCards.includes('LEG_CS3_031')) {
+			console.error('Should not have this card', deckCards, row.playerDecklist);
+		}
 
 		for (let i = 0; i < deckCards.length; i++) {
 			const consolidatedCardData = consolidatedData[i];
@@ -80,7 +86,7 @@ const populateRefData = (
 			// throw new Error('Missing card id');
 		}
 		result.push({
-			cardId: allCards.getBaseCardIdForDeckbuilding(card.cardId, format),
+			cardId: baseCardId(card.cardId, format, allCards),
 			inStartingDeck: 0,
 			wins: 0,
 			drawnBeforeMulligan: 0,

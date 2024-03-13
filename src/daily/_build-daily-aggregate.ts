@@ -39,7 +39,7 @@ export default async (event, context: Context): Promise<any> => {
 	const rankBracket: RankBracket = event.rankBracket;
 	const targetDate: string = event.targetDate || yesterdayDate();
 
-	// console.log('aggregating daily data', format, rankBracket, targetDate);
+	console.log('aggregating daily data', format, rankBracket, targetDate);
 	const dailyDeckStats: readonly DeckStat[] = await mergeAllHourlyStatsForTheDay(format, rankBracket, targetDate);
 	if (!dailyDeckStats?.length) {
 		console.warn('no deck stats for', format, rankBracket, targetDate);

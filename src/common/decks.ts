@@ -48,6 +48,7 @@ export const mergeDeckStatsData = (sortedData: DeckStat[], timePeriod: TimePerio
 					)
 				) {
 					console.error(
+						currentStat.decklist,
 						currentStat.totalGames,
 						currentStat.cardsData.filter(
 							(d) => d.inStartingDeck == 0 || d.inStartingDeck % currentStat.totalGames != 0,
@@ -61,6 +62,7 @@ export const mergeDeckStatsData = (sortedData: DeckStat[], timePeriod: TimePerio
 					currentStat.cardsData.some((d) => d.wins == 0 || d.wins % currentStat.totalWins !== 0)
 				) {
 					console.error(
+						currentStat.decklist,
 						currentStat.totalWins,
 						currentStat.cardsData.filter((d) => d.wins == 0 || d.wins % currentStat.totalWins !== 0),
 						currentStat,

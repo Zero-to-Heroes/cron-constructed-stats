@@ -24,7 +24,7 @@
 		"@firestone-hs/aws-lambda-utils": "^0.0.61",
 		"@firestone-hs/deckstrings": "^2.2.7",
 		"@firestone-hs/hs-replay-xml-parser": "0.0.105",
-		"@firestone-hs/reference-data": "^2.0.3",
+		"@firestone-hs/reference-data": "^2.0.10",
 		"aws-sdk": "^2.1040.0",
 		"elementtree": "^0.1.7",
 		"mysql": "^2.18.1",
