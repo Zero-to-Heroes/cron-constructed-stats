@@ -93,7 +93,8 @@ Resources:
                     Type: Schedule
                     Properties:
                         # Cron that runs every hour at 40 minutes past the hour
-                        Schedule: cron(25 * * * ? *)
+                        # Schedule: cron(25 * * * ? *)
+                        Schedule: cron(25 0/3 * * ? *)
     FinalStatsByClassVersion:
         Type: AWS::Lambda::Version
         Properties:
@@ -133,7 +134,8 @@ Resources:
                     Type: Schedule
                     Properties:
                         # Cron that runs every hour at 40 minutes past the hour
-                        Schedule: cron(40 * * * ? *)
+                        # Schedule: cron(40 * * * ? *)
+                        Schedule: cron(40 0/3 * * ? *)
     FinalStatsVersion:
         Type: AWS::Lambda::Version
         Properties:
