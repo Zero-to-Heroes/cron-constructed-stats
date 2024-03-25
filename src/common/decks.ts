@@ -1,9 +1,15 @@
+import { AllCardsService, GameFormat } from '@firestone-hs/reference-data';
 import { ConstructedCardData, ConstructedMatchupInfo, DeckStat, TimePeriod } from '../model';
 import { Mutable, round } from '../utils';
 import { mergeCardsData } from './cards';
 import { mergeMatchupInfo } from './matchup';
 
-export const mergeDeckStatsData = (sortedData: DeckStat[], timePeriod: TimePeriod, debug = false): DeckStat[] => {
+export const mergeDeckStatsData = (
+	sortedData: DeckStat[],
+	timePeriod: TimePeriod,
+	format: GameFormat,
+	allCards: AllCardsService,
+): DeckStat[] => {
 	if (!sortedData?.length) {
 		return [];
 	}
@@ -34,7 +40,7 @@ export const mergeDeckStatsData = (sortedData: DeckStat[], timePeriod: TimePerio
 
 		if (currentDecklist === null || stat.decklist !== currentDecklist) {
 			if (currentStat !== null) {
-				currentStat.cardsData = mergeCardsData(cardsData);
+				currentStat.cardsData = mergeCardsData(cardsData, format, allCards);
 				currentStat.matchupInfo = mergeMatchupInfo(matchupInfo);
 				currentStat.winrate =
 					currentStat.totalGames === 0 ? null : round(currentStat.totalWins / currentStat.totalGames, 4);
@@ -118,7 +124,7 @@ export const mergeDeckStatsData = (sortedData: DeckStat[], timePeriod: TimePerio
 		matchupInfo.push(...stat.matchupInfo.map((m) => ({ ...m } as ConstructedMatchupInfo)));
 	}
 
-	currentStat.cardsData = mergeCardsData(cardsData);
+	currentStat.cardsData = mergeCardsData(cardsData, format, allCards);
 	currentStat.matchupInfo = mergeMatchupInfo(matchupInfo);
 	result.push(currentStat);
 	return result;

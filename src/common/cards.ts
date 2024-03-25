@@ -1,18 +1,26 @@
+import { AllCardsService, GameFormat } from '@firestone-hs/reference-data';
+import { baseCardId } from '../hourly/constructed-card-data';
 import { ConstructedCardData } from '../model';
 
-export const mergeCardsData = (inputCardsData: ConstructedCardData[]): readonly ConstructedCardData[] => {
+export const mergeCardsData = (
+	inputCardsData: ConstructedCardData[],
+	format: GameFormat,
+	allCards: AllCardsService,
+): readonly ConstructedCardData[] => {
 	const result = [];
 	let currentCardId: string = null;
 	let currentCardData: ConstructedCardData = null;
 	let cardData = null;
-	const sortedCardsData = [...inputCardsData].sort((a, b) => a.cardId.localeCompare(b.cardId));
+	const sortedCardsData = [...inputCardsData].sort((a, b) =>
+		baseCardId(a.cardId, format, allCards).localeCompare(baseCardId(b.cardId, format, allCards)),
+	);
 	while ((cardData = sortedCardsData.pop()) != null) {
-		if (currentCardId === null || cardData.cardId !== currentCardId) {
+		if (currentCardId === null || baseCardId(cardData.cardId, format, allCards) !== currentCardId) {
 			if (currentCardData !== null) {
 				result.push(currentCardData);
 			}
 			currentCardData = {
-				cardId: cardData.cardId,
+				cardId: baseCardId(cardData.cardId, format, allCards),
 				inStartingDeck: 0,
 				wins: 0,
 				drawnBeforeMulligan: 0,
@@ -23,7 +31,7 @@ export const mergeCardsData = (inputCardsData: ConstructedCardData[]): readonly 
 				drawnThenWin: 0,
 			};
 		}
-		currentCardId = cardData.cardId;
+		currentCardId = baseCardId(cardData.cardId, format, allCards);
 		currentCardData.inStartingDeck += cardData.inStartingDeck;
 		currentCardData.wins += cardData.wins;
 		currentCardData.drawnBeforeMulligan += cardData.drawnBeforeMulligan;

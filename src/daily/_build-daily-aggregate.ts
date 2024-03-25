@@ -40,7 +40,12 @@ export default async (event, context: Context): Promise<any> => {
 	const targetDate: string = event.targetDate || yesterdayDate();
 
 	console.log('aggregating daily data', format, rankBracket, targetDate);
-	const dailyDeckStats: readonly DeckStat[] = await mergeAllHourlyStatsForTheDay(format, rankBracket, targetDate);
+	const dailyDeckStats: readonly DeckStat[] = await mergeAllHourlyStatsForTheDay(
+		format,
+		rankBracket,
+		targetDate,
+		allCards,
+	);
 	if (!dailyDeckStats?.length) {
 		console.warn('no deck stats for', format, rankBracket, targetDate);
 		return;

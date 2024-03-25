@@ -1,4 +1,4 @@
-import { AllCardsService } from '@firestone-hs/reference-data';
+import { AllCardsService, formatFormatReverse } from '@firestone-hs/reference-data';
 import { DECK_STATS_BUCKET } from '../common/config';
 import { mergeDeckStatsData } from '../common/decks';
 import { ArchetypeStat, DeckStat, DeckStats, GameFormat, RankBracket, TimePeriod } from '../model';
@@ -40,7 +40,12 @@ export const buildDeckStatsWithoutArchetypeInfo = async (
 
 	// console.log('memory after sortedData', formatMemoryUsage(process.memoryUsage()));
 	// console.time('merge-data');
-	const result: readonly DeckStat[] = mergeDeckStatsData(deckStats, timePeriod);
+	const result: readonly DeckStat[] = mergeDeckStatsData(
+		deckStats,
+		timePeriod,
+		formatFormatReverse(format),
+		allCards,
+	);
 	deckStats = null;
 	// console.log('merged deck stats', result.length);
 	// console.timeEnd('merge-data');

@@ -1,5 +1,5 @@
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
-import { AllCardsService } from '@firestone-hs/reference-data';
+import { AllCardsService, GameFormat } from '@firestone-hs/reference-data';
 import { mergeCardsData } from '../common/cards';
 import { mergeMatchupInfo } from '../common/matchup';
 import { ArchetypeStat, ArchetypeStats, DeckStat, DeckStats } from '../model';
@@ -9,6 +9,7 @@ export const aggregateDeckData = (
 	dailyData: readonly DeckStats[],
 	archetypeData: ArchetypeStats,
 	allCards: AllCardsService,
+	format: GameFormat,
 ): DeckStats => {
 	const result: DeckStats = {
 		lastUpdated: new Date(),
@@ -20,6 +21,7 @@ export const aggregateDeckData = (
 			dailyData.flatMap((d) => d.deckStats),
 			archetypeData,
 			allCards,
+			format,
 		),
 	};
 	return result;
@@ -29,6 +31,7 @@ const mergeDeckStats = (
 	deckStats: readonly DeckStat[],
 	archetypeData: ArchetypeStats,
 	allCards: AllCardsService,
+	format: GameFormat,
 ): readonly DeckStat[] => {
 	const groupedByDecklist = groupByFunction((a: DeckStat) => a.decklist)(deckStats);
 	return Object.values(groupedByDecklist).map((group) =>
@@ -36,6 +39,7 @@ const mergeDeckStats = (
 			group,
 			archetypeData.archetypeStats.find((a) => a.id === group[0].archetypeId),
 			allCards,
+			format,
 		),
 	);
 };
@@ -44,10 +48,15 @@ const mergeDeckStatsForDecklist = (
 	deckStats: readonly DeckStat[],
 	archetypeData: ArchetypeStat,
 	allCards: AllCardsService,
+	format: GameFormat,
 ): DeckStat => {
 	const totalGames = deckStats.map((d) => d.totalGames).reduce((a, b) => a + b, 0);
 	const totalWins = deckStats.map((d) => d.totalWins).reduce((a, b) => a + b, 0);
-	const cardsData = mergeCardsData(deckStats.flatMap((d) => d.cardsData));
+	const cardsData = mergeCardsData(
+		deckStats.flatMap((d) => d.cardsData),
+		format,
+		allCards,
+	);
 	const result: DeckStat = {
 		lastUpdate: deckStats
 			.map((d) => new Date(d.lastUpdate))

@@ -1,3 +1,4 @@
+import { AllCardsService, formatFormatReverse } from '@firestone-hs/reference-data';
 import { DECK_STATS_BUCKET } from '../common/config';
 import { mergeDeckStatsData } from '../common/decks';
 import { buildFileKeys, buildFileNamesForGivenDay } from '../common/utils';
@@ -8,6 +9,7 @@ export const mergeAllHourlyStatsForTheDay = async (
 	format: GameFormat,
 	rankBracket: RankBracket,
 	targetDate: string,
+	allCards: AllCardsService,
 ): Promise<readonly DeckStat[]> => {
 	const fileNames = buildFileNamesForGivenDay(targetDate);
 	// console.log('fileNames', targetDate, fileNames);
@@ -21,7 +23,7 @@ export const mergeAllHourlyStatsForTheDay = async (
 		?.flatMap((d) => d?.deckStats ?? [])
 		.filter((d) => !!d.decklist)
 		.sort((a, b) => a.decklist.localeCompare(b.decklist));
-	const result = mergeDeckStatsData(dailyDeckStats, null, true);
+	const result = mergeDeckStatsData(dailyDeckStats, null, formatFormatReverse(format), allCards);
 	// console.debug('aggregated', dailyDeckStats.length, 'into', result.length, 'deck stats');
 	// console.debug('unique decklists', [...new Set(dailyDeckStats.map((stat) => stat.decklist))].length);
 	// console.debug('unique decklists in result', [...new Set(result.map((stat) => stat.decklist))].length);

@@ -69,7 +69,7 @@ export const buildCardsDataForDeck = (
 	return { data: consolidatedData, validRows: validRows };
 };
 
-const baseCardId = (cardId: string, format: GameFormat, allCards: AllCardsService): string => {
+export const baseCardId = (cardId: string, format: GameFormat, allCards: AllCardsService): string => {
 	return allCards.getBaseCardIdForDeckbuilding(cardId, format);
 };
 
