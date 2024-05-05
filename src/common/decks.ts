@@ -1,4 +1,5 @@
 import { AllCardsService, GameFormat } from '@firestone-hs/reference-data';
+import { baseCardId } from '../hourly/constructed-card-data';
 import { ConstructedCardData, ConstructedMatchupInfo, DeckStat, TimePeriod } from '../model';
 import { Mutable, round } from '../utils';
 import { mergeCardsData } from './cards';
@@ -59,6 +60,13 @@ export const mergeDeckStatsData = (
 						currentStat.cardsData.filter(
 							(d) => d.inStartingDeck == 0 || d.inStartingDeck % currentStat.totalGames != 0,
 						),
+						[...cardsData]
+							.sort((a, b) =>
+								baseCardId(a.cardId, format, allCards).localeCompare(
+									baseCardId(b.cardId, format, allCards),
+								),
+							)
+							.map((d) => baseCardId(d.cardId, format, allCards)),
 						currentStat,
 					);
 					throw new Error('Invalid cards data for deck: totalGames');
