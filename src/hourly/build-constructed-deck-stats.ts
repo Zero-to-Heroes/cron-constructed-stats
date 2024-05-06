@@ -122,6 +122,7 @@ const dispatchEvents = async (context: Context, format: GameFormat, startDate: s
 
 	// console.log('dispatching events');
 	const allRankBracket: readonly RankBracket[] = [
+		'competitive',
 		'top-2000-legend',
 		'legend',
 		'legend-diamond',

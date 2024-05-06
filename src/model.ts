@@ -93,6 +93,7 @@ export interface ArchetypeStat {
 }
 
 export type RankBracket =
+	| 'competitive'
 	| 'top-2000-legend'
 	| 'legend'
 	| 'legend-diamond'

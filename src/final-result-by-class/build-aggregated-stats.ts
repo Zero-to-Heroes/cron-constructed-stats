@@ -104,6 +104,7 @@ export default async (event, context: Context): Promise<any> => {
 
 const getLastUpdate = (deckStats: readonly DeckStat[]): Date => {
 	const lastUpdateInfo = deckStats
+		.filter((d) => !!d) // Happens sometimes for Twist
 		.map((d) => ({
 			date: new Date(d.lastUpdate),
 			dateStr: d.lastUpdate,
@@ -143,6 +144,7 @@ const dispatchEvents = async (context: Context, format: GameFormat) => {
 	const allTimePeriod: readonly TimePeriod[] = ['last-patch', 'past-20', 'past-7', 'past-3', 'current-season'];
 	// const allTimePeriod: readonly TimePeriod[] = ['last-patch'];
 	const allRankBracket: readonly RankBracket[] = [
+		'competitive',
 		'top-2000-legend',
 		'legend',
 		'legend-diamond',

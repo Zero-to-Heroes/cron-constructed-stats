@@ -2,6 +2,9 @@ import { ConstructedMatchStatDbRow, RankBracket } from '../model';
 
 export const isCorrectRank = (row: ConstructedMatchStatDbRow, rankBracket: RankBracket): boolean => {
 	switch (rankBracket) {
+		case 'competitive':
+			// High legend or Diamond 1-4
+			return (row.isLegend && row.playerRank <= 2000) || (!row.isLegend && row.playerRank < 5);
 		case 'top-2000-legend':
 			return row.isLegend && row.playerRank <= 2000;
 		case 'legend':

@@ -80,6 +80,7 @@ const dispatchFormatEvents = async (context: Context, event: any) => {
 	// const allFormats: readonly GameFormat[] = ['twist'];
 	// const allRankBracket: readonly RankBracket[] = ['all'];
 	const allRankBracket: readonly RankBracket[] = [
+		'competitive',
 		'top-2000-legend',
 		'legend',
 		'legend-diamond',
