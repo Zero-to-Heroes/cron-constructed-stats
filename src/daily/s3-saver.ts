@@ -24,18 +24,6 @@ export const persistData = async (
 	// The date in the format YYYY-MM-ddTHH:mm:ss.sssZ
 	const startDate = targetDate.toISOString();
 
-	const result: DeckStats = {
-		lastUpdated: lastUpdate,
-		rankBracket: rankBracket,
-		timePeriod: null,
-		format: format,
-		dataPoints: dailyDeckStats.map((d) => d.totalGames).reduce((a, b) => a + b, 0),
-		deckStats: dailyDeckStats,
-	};
-	const gzippedMinResult = gzipSync(JSON.stringify(result));
-	const destination = `${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/daily/${startDate}.gz.json`;
-	await s3.writeFile(gzippedMinResult, DECK_STATS_BUCKET, destination, 'application/json', 'gzip');
-
 	for (const playerClass of allClasses) {
 		const classDecks = dailyDeckStats.filter((deck) => deck.playerClass === playerClass);
 		const result: DeckStats = {
@@ -46,8 +34,25 @@ export const persistData = async (
 			dataPoints: classDecks.map((d) => d.totalGames).reduce((a, b) => a + b, 0),
 			deckStats: classDecks,
 		};
+		console.log('zipping for class', playerClass, format, rankBracket, targetDateStr, classDecks.length);
 		const gzippedMinResult = gzipSync(JSON.stringify(result));
 		const destination = `${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/daily/${startDate}-${playerClass}.gz.json`;
+		console.log('\twriting to', destination);
 		await s3.writeFile(gzippedMinResult, DECK_STATS_BUCKET, destination, 'application/json', 'gzip');
 	}
+
+	// Is this used anywhere??
+	// const result: DeckStats = {
+	// 	lastUpdated: lastUpdate,
+	// 	rankBracket: rankBracket,
+	// 	timePeriod: null,
+	// 	format: format,
+	// 	dataPoints: dailyDeckStats.map((d) => d.totalGames).reduce((a, b) => a + b, 0),
+	// 	deckStats: dailyDeckStats,
+	// };
+	// console.log('zipping', format, rankBracket, targetDateStr, dailyDeckStats.length);
+	// const gzippedMinResult = gzipSync(JSON.stringify(result));
+	// const destination = `${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/daily/${startDate}.gz.json`;
+	// console.log('\twriting to', destination);
+	// await s3.writeFile(gzippedMinResult, DECK_STATS_BUCKET, destination, 'application/json', 'gzip');
 };

@@ -75,7 +75,11 @@ const mergeDeckStatsForDecklist = (
 		cardsData: cardsData,
 		cardVariations: buildCardVariations(deckStats[0].decklist, archetypeData.coreCards, allCards),
 		archetypeCoreCards: archetypeData.coreCards,
-		matchupInfo: mergeMatchupInfo(deckStats.flatMap((d) => d.matchupInfo)),
+		matchupInfo: mergeMatchupInfo(
+			deckStats.flatMap((d) => d.matchupInfo),
+			format,
+			allCards,
+		),
 	};
 	return result;
 };

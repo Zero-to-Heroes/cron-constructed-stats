@@ -36,7 +36,7 @@ const buildDeckStatsForRankBracket = (
 
 			const totalGames: number = validRows.length;
 			const totalWins: number = validRows.filter((row) => row.result === 'won').length;
-			const matchupInfo = buildMatchupInfoForDeck(validRows);
+			const matchupInfo = buildMatchupInfoForDeck(validRows, allCards);
 			try {
 				const result: DeckStat = {
 					lastUpdate: validRows
@@ -69,14 +69,23 @@ const buildDeckStatsForRankBracket = (
 	return deckStats;
 };
 
-const buildMatchupInfoForDeck = (rows: readonly ConstructedMatchStatDbRow[]): readonly ConstructedMatchupInfo[] => {
+const buildMatchupInfoForDeck = (
+	rows: readonly ConstructedMatchStatDbRow[],
+	allCards: AllCardsService,
+): readonly ConstructedMatchupInfo[] => {
 	const groupedByOpponent = groupByFunction((row: ConstructedMatchStatDbRow) => row.opponentClass)(rows);
 	return allClasses.map((opponentClass) => {
+		const opponentRows = groupedByOpponent[opponentClass] ?? [];
+		const cardsDataWhenFightingClass = buildCardsDataForDeck(opponentRows, allCards);
+		const totalGames = opponentRows.length ?? 0;
+		const wins = opponentRows.filter((row) => row.result === 'won')?.length ?? 0;
 		const result: ConstructedMatchupInfo = {
 			opponentClass: opponentClass,
-			totalGames: groupedByOpponent[opponentClass]?.length ?? 0,
-			wins: groupedByOpponent[opponentClass]?.filter((row) => row.result === 'won')?.length ?? 0,
-			losses: groupedByOpponent[opponentClass]?.filter((row) => row.result === 'lost')?.length ?? 0,
+			totalGames: totalGames,
+			wins: wins,
+			losses: opponentRows.filter((row) => row.result === 'lost')?.length ?? 0,
+			winrate: totalGames > 0 ? wins / totalGames : null,
+			cardsData: cardsDataWhenFightingClass?.data ?? [],
 		};
 		return result;
 	});

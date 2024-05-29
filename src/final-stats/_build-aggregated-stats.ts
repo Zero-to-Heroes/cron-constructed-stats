@@ -47,6 +47,7 @@ export default async (event, context: Context): Promise<any> => {
 		.map((content) => JSON.parse(content) as DeckStats)
 		// Because some game modes, like Twist, don't have all the classes
 		.filter((stat) => !!stat);
+	console.log('read class decks', classDecks.length);
 	const classArchetypes = (
 		await Promise.all(
 			ALL_CLASSES.map((playerClass) =>
@@ -62,10 +63,14 @@ export default async (event, context: Context): Promise<any> => {
 	)
 		.map((content) => JSON.parse(content) as ArchetypeStats)
 		.filter((archetype) => !!archetype);
+	console.log('read class archetypes', classDecks.length);
 	const allArchetypes = mergeArchetypes(classArchetypes);
+	console.log('merged archetypes', allArchetypes.length);
 	const allDecks = mergeDecks(classDecks);
+	console.log('merged decks', allDecks.length);
 	const lastUpdate = getLastUpdate(classDecks);
 
+	console.log('persisting data', allArchetypes.length, allDecks.length, lastUpdate, rankBracket, timePeriod, format);
 	await persistData(allArchetypes, allDecks, lastUpdate, rankBracket, timePeriod, format);
 	cleanup();
 };

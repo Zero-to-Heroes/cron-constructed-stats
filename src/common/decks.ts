@@ -42,7 +42,7 @@ export const mergeDeckStatsData = (
 		if (currentDecklist === null || stat.decklist !== currentDecklist) {
 			if (currentStat !== null) {
 				currentStat.cardsData = mergeCardsData(cardsData, format, allCards);
-				currentStat.matchupInfo = mergeMatchupInfo(matchupInfo);
+				currentStat.matchupInfo = mergeMatchupInfo(matchupInfo, format, allCards);
 				currentStat.winrate =
 					currentStat.totalGames === 0 ? null : round(currentStat.totalWins / currentStat.totalGames, 4);
 				result.push(currentStat);
@@ -133,7 +133,7 @@ export const mergeDeckStatsData = (
 	}
 
 	currentStat.cardsData = mergeCardsData(cardsData, format, allCards);
-	currentStat.matchupInfo = mergeMatchupInfo(matchupInfo);
+	currentStat.matchupInfo = mergeMatchupInfo(matchupInfo, format, allCards);
 	result.push(currentStat);
 	return result;
 

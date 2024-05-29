@@ -77,6 +77,8 @@ export interface ConstructedMatchupInfo {
 	totalGames: number;
 	wins: number;
 	losses: number;
+	cardsData: readonly ConstructedCardData[];
+	winrate: number;
 }
 
 export interface ArchetypeStat {

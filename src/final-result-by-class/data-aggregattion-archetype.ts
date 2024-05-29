@@ -56,7 +56,11 @@ const mergeArchetypeStatsForArchetype = (
 		totalWins: totalWins,
 		winrate: round(totalWins / totalGames, 2),
 		cardsData: cardsData,
-		matchupInfo: mergeMatchupInfo(archetypeStats.flatMap((d) => d.matchupInfo)),
+		matchupInfo: mergeMatchupInfo(
+			archetypeStats.flatMap((d) => d.matchupInfo),
+			format,
+			allCards,
+		),
 		coreCards: buildCoreCards(cardsData, totalGames),
 	};
 	return result;

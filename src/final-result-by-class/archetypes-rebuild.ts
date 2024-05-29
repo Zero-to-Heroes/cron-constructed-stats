@@ -1,6 +1,8 @@
+/* eslint-disable no-extra-boolean-cast */
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
-import { AllCardsService } from '@firestone-hs/reference-data';
+import { AllCardsService, GameFormat } from '@firestone-hs/reference-data';
 import { Archetype } from '../archetypes';
+import { mergeCardsData } from '../common/cards';
 import { CORE_CARD_THRESHOLD } from '../common/config';
 import { allClasses } from '../common/utils';
 import { ArchetypeStat, ConstructedCardData, ConstructedMatchupInfo, DeckStat } from '../model';
@@ -9,6 +11,7 @@ import { round } from '../utils';
 export const buildArchetypeStats = (
 	refArchetypes: readonly Archetype[],
 	dailyDeckData: readonly DeckStat[],
+	format: GameFormat,
 	allCards: AllCardsService,
 	debug = false,
 ): readonly ArchetypeStat[] => {
@@ -21,6 +24,7 @@ export const buildArchetypeStats = (
 			buildArchetypeStat(
 				refArchetypes.find((arch) => arch.id === parseInt(archetypeId)),
 				groupedByArchetype[archetypeId],
+				format,
 				allCards,
 				debug,
 			),
@@ -32,7 +36,8 @@ export const buildArchetypeStats = (
 const buildArchetypeStat = (
 	archetype: Archetype,
 	archetypeDecks: readonly DeckStat[],
-	allCards,
+	format: GameFormat,
+	allCards: AllCardsService,
 	debug = false,
 ): ArchetypeStat => {
 	debug = debug && archetype.id === 1691; // sludge warlock
@@ -47,7 +52,11 @@ const buildArchetypeStat = (
 	const coreCards: readonly string[] = isOther(archetype.archetype) ? [] : buildCoreCards(archetypeDecks, debug);
 	// debug && console.debug('totalGames', totalGames);
 	const cardsData: readonly ConstructedCardData[] = buildCardsDataForArchetype(archetypeDecks, debug);
-	const matchupInfo: readonly ConstructedMatchupInfo[] = buildMatchupInfoForArchetype(archetypeDecks);
+	const matchupInfo: readonly ConstructedMatchupInfo[] = buildMatchupInfoForArchetype(
+		archetypeDecks,
+		format,
+		allCards,
+	);
 	const result: ArchetypeStat = {
 		id: archetype.id,
 		name: archetype.archetype,
@@ -105,16 +114,28 @@ const buildCoreCards = (decks: readonly DeckStat[], debug = false): readonly str
 	return coreCards;
 };
 
-const buildMatchupInfoForArchetype = (deckStats: readonly DeckStat[]): readonly ConstructedMatchupInfo[] => {
+const buildMatchupInfoForArchetype = (
+	deckStats: readonly DeckStat[],
+	format: GameFormat,
+	allCards: AllCardsService,
+): readonly ConstructedMatchupInfo[] => {
 	return allClasses.map((opponentClass) => {
 		const infoForClass = deckStats
 			.map((d) => d.matchupInfo.find((info) => info.opponentClass === opponentClass))
 			.filter((info) => info);
+		const totalGames = infoForClass.map((info) => info.totalGames).reduce((a, b) => a + b, 0);
+		const wins = infoForClass.map((info) => info.wins).reduce((a, b) => a + b, 0);
 		const result: ConstructedMatchupInfo = {
 			opponentClass: opponentClass,
-			totalGames: infoForClass.map((info) => info.totalGames).reduce((a, b) => a + b, 0),
-			wins: infoForClass.map((info) => info.wins).reduce((a, b) => a + b, 0),
+			totalGames: totalGames,
+			wins: wins,
 			losses: infoForClass.map((info) => info.losses).reduce((a, b) => a + b, 0),
+			winrate: !!totalGames ? wins / totalGames : null,
+			cardsData: mergeCardsData(
+				infoForClass.flatMap((info) => info.cardsData),
+				format,
+				allCards,
+			),
 		};
 		return result;
 	});
