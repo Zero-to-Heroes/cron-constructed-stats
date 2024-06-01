@@ -38,7 +38,11 @@ const buildDeckStatsForRankBracket = (
 			const totalWins: number = validRows.filter((row) => row.result === 'won').length;
 			const matchupInfo = buildMatchupInfoForDeck(validRows, allCards);
 			try {
+				const heroCardIds: readonly string[] = [
+					...new Set(validRows.map((row) => row.playerHeroCardId).filter((cardId) => !!cardId?.length)),
+				];
 				const result: DeckStat = {
+					heroCardIds: heroCardIds,
 					lastUpdate: validRows
 						.filter((r) => r.creationDate)
 						.map((d) => new Date(d.creationDate))

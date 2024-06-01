@@ -12,6 +12,8 @@ export interface ConstructedMatchStatDbRow {
 	readonly result: 'won' | 'lost' | 'tied';
 	readonly playerDecklist: string;
 	readonly matchAnalysis: string;
+	readonly playerHeroCardId: string;
+	readonly opponentHeroCardId: string;
 }
 
 export interface DeckStats {
@@ -34,6 +36,7 @@ export interface ArchetypeStats {
 }
 
 export interface DeckStat {
+	readonly heroCardIds?: readonly string[];
 	readonly playerClass: string;
 	readonly archetypeId: number;
 	readonly archetypeName: string;
