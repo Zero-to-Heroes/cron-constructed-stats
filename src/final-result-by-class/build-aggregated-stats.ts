@@ -2,6 +2,7 @@ import {
 	S3,
 	getConnectionReadOnly,
 	getLastConstructedPatch,
+	getLastTwistPatch,
 	logBeforeTimeout,
 	sleep,
 } from '@firestone-hs/aws-lambda-utils';
@@ -41,7 +42,7 @@ export default async (event, context: Context): Promise<any> => {
 	const playerClass: string = event.playerClass;
 
 	console.log('aggregating data', format, timePeriod, rankBracket, playerClass);
-	const patchInfo = await getLastConstructedPatch();
+	const patchInfo = format === 'twist' ? await getLastTwistPatch() : await getLastConstructedPatch();
 	// console.log('memory before buildDeckStatsWithoutArchetypeInfo', formatMemoryUsage(process.memoryUsage()));
 	const deckStatsWithoutArchetypeInfo: readonly DeckStat[] = await buildDeckStatsWithoutArchetypeInfo(
 		format,
