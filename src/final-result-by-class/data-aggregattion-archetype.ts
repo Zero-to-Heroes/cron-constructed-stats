@@ -52,6 +52,7 @@ const mergeArchetypeStatsForArchetype = (
 		format: archetypeStats[0].format,
 		name: archetypeStats[0].name,
 		heroCardClass: archetypeStats[0].heroCardClass,
+		heroCardIds: [...new Set(archetypeStats.flatMap((d) => d.heroCardIds ?? []).filter((cardId) => !!cardId))],
 		totalGames: totalGames,
 		totalWins: totalWins,
 		winrate: round(totalWins / totalGames, 2),

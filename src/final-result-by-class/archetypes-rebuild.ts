@@ -62,6 +62,7 @@ const buildArchetypeStat = (
 		name: archetype.archetype,
 		format: archetypeDecks[0]?.format,
 		heroCardClass: archetypeDecks[0]?.playerClass,
+		heroCardIds: [...new Set(archetypeDecks.flatMap((d) => d.heroCardIds ?? []).filter((cardId) => !!cardId))],
 		totalGames: totalGames,
 		totalWins: totalWins,
 		coreCards: coreCards,

@@ -13,16 +13,16 @@ export const persistData = async (
 	timePeriod: TimePeriod,
 	format: GameFormat,
 ): Promise<void> => {
-	console.time('save-global-archetypes');
+	// console.time('save-global-archetypes');
 	await saveGlobalArchetypeStats(archetypeStats, lastUpdate, rankBracket, timePeriod, format);
-	console.timeEnd('save-global-archetypes');
-	console.log('saved global archetype stats', archetypeStats.length);
+	// console.timeEnd('save-global-archetypes');
+	// console.log('saved global archetype stats', archetypeStats.length);
 
-	console.time('save-global-decks');
+	// console.time('save-global-decks');
 	await saveGlobalDeckStats(deckStats, lastUpdate, rankBracket, timePeriod, format);
-	console.log('saved global deck stats', deckStats.length);
-	console.timeEnd('save-global-decks');
-	console.log('finished saving data');
+	// console.log('saved global deck stats', deckStats.length);
+	// console.timeEnd('save-global-decks');
+	// console.log('finished saving data');
 };
 
 const saveGlobalArchetypeStats = async (

@@ -51,24 +51,24 @@ export default async (event, context: Context): Promise<any> => {
 		patchInfo,
 		allCards,
 	);
-	console.log(
-		'deckStatsWithoutArchetypeInfo',
-		deckStatsWithoutArchetypeInfo?.length,
-		deckStatsWithoutArchetypeInfo?.map((a) => a.totalGames).reduce((a, b) => a + b, 0),
-		deckStatsWithoutArchetypeInfo[0],
-	);
+	// console.log(
+	// 	'deckStatsWithoutArchetypeInfo',
+	// 	deckStatsWithoutArchetypeInfo?.length,
+	// 	deckStatsWithoutArchetypeInfo?.map((a) => a.totalGames).reduce((a, b) => a + b, 0),
+	// 	deckStatsWithoutArchetypeInfo[0],
+	// );
 	if (!deckStatsWithoutArchetypeInfo?.length) {
 		cleanup();
 		return;
 	}
 
-	console.time('archetypesSql');
+	// console.time('archetypesSql');
 	const mysql = await getConnectionReadOnly();
 	const archetypes = await loadArchetypes(mysql);
 	mysql.end();
-	console.timeEnd('archetypesSql');
+	// console.timeEnd('archetypesSql');
 
-	console.time('archetypeStats');
+	// console.time('archetypeStats');
 	// console.log('memory before buildArchetypeStats', formatMemoryUsage(process.memoryUsage()));
 	// const debug = format === 'standard' && timePeriod === 'last-patch' && rankBracket === 'all';
 	const archetypeStats: readonly ArchetypeStat[] = buildArchetypeStats(
@@ -78,32 +78,32 @@ export default async (event, context: Context): Promise<any> => {
 		allCards,
 		// debug,
 	);
-	console.timeEnd('archetypeStats');
-	console.log(
-		'archetypeStats',
-		archetypeStats?.length,
-		archetypes?.length,
-		archetypeStats?.map((a) => a.totalGames).reduce((a, b) => a + b, 0),
-	);
+	// console.timeEnd('archetypeStats');
+	// console.log(
+	// 	'archetypeStats',
+	// 	archetypeStats?.length,
+	// 	archetypes?.length,
+	// 	archetypeStats?.map((a) => a.totalGames).reduce((a, b) => a + b, 0),
+	// );
 
-	console.time('deckStats');
+	// console.time('deckStats');
 	// console.log('memory before enhanceDeckStats', formatMemoryUsage(process.memoryUsage()));
 	const deckStats: readonly DeckStat[] = enhanceDeckStats(deckStatsWithoutArchetypeInfo, archetypeStats, allCards);
-	console.timeEnd('deckStats');
-	console.log(
-		'deckStats',
-		deckStats?.length,
-		deckStats?.map((a) => a.totalGames).reduce((a, b) => a + b, 0),
-	);
+	// console.timeEnd('deckStats');
+	// console.log(
+	// 	'deckStats',
+	// 	deckStats?.length,
+	// 	deckStats?.map((a) => a.totalGames).reduce((a, b) => a + b, 0),
+	// );
 
 	const lastUpdate = getLastUpdate(deckStats);
 
 	// Only persist detailed decks twice a day, at 00 hours and 12 hours
-	console.time('persistData');
+	// console.time('persistData');
 	const shouldPersistDetailedDecks = new Date().getHours() % 12 === 0;
 	await persistData(archetypeStats, deckStats, lastUpdate, rankBracket, timePeriod, format, playerClass);
 	cleanup();
-	console.timeEnd('persistData');
+	// console.timeEnd('persistData');
 };
 
 const getLastUpdate = (deckStats: readonly DeckStat[]): Date => {

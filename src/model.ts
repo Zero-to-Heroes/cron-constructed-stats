@@ -89,6 +89,7 @@ export interface ArchetypeStat {
 	readonly name: string;
 	readonly format: GameFormat;
 	readonly heroCardClass: string;
+	readonly heroCardIds?: readonly string[];
 	readonly totalGames: number;
 	readonly totalWins: number;
 	readonly winrate: number;

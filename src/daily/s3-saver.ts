@@ -34,10 +34,10 @@ export const persistData = async (
 			dataPoints: classDecks.map((d) => d.totalGames).reduce((a, b) => a + b, 0),
 			deckStats: classDecks,
 		};
-		console.log('zipping for class', playerClass, format, rankBracket, targetDateStr, classDecks.length);
+		// console.log('zipping for class', playerClass, format, rankBracket, targetDateStr, classDecks.length);
 		const gzippedMinResult = gzipSync(JSON.stringify(result));
 		const destination = `${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/daily/${startDate}-${playerClass}.gz.json`;
-		console.log('\twriting to', destination);
+		// console.log('\twriting to', destination);
 		await s3.writeFile(gzippedMinResult, DECK_STATS_BUCKET, destination, 'application/json', 'gzip');
 	}
 
