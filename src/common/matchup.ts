@@ -41,6 +41,9 @@ export const mergeMatchupInfo = (
 		cardsData.push(...matchupInfo.cardsData.map((d) => ({ ...d } as ConstructedCardData)));
 	}
 	currentMatchupInfo.cardsData = mergeCardsData(cardsData, format, allCards);
+	currentMatchupInfo.winrate = !!currentMatchupInfo.totalGames
+		? currentMatchupInfo.wins / currentMatchupInfo.totalGames
+		: null;
 	cardsData = [];
 	result.push(currentMatchupInfo);
 	return result;
