@@ -71,7 +71,7 @@ Resources:
             Runtime: nodejs18.x
             Timeout: 800
             CodeUri: ./dist/final-result-by-class/build-aggregated-stats
-            MemorySize: 6000 
+            MemorySize: 10000 
             ReservedConcurrentExecutions: 10 # Need to investigate locks. To avoid lock races when inserting data in DB
             Layers:
                 - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
