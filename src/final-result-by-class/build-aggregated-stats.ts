@@ -43,6 +43,10 @@ export default async (event, context: Context): Promise<any> => {
 
 	console.log('aggregating data', format, timePeriod, rankBracket, playerClass);
 	const patchInfo = format === 'twist' ? await getLastTwistPatch() : await getLastConstructedPatch();
+	if (!patchInfo) {
+		console.error('Could not retrieve patch info', format);
+		throw new Error('Could not retrieve patch info');
+	}
 	// console.log('memory before buildDeckStatsWithoutArchetypeInfo', formatMemoryUsage(process.memoryUsage()));
 	const deckStatsWithoutArchetypeInfo: readonly DeckStat[] = await buildDeckStatsWithoutArchetypeInfo(
 		format,
