@@ -1,13 +1,12 @@
-import { S3, getConnection, getConnectionReadOnly, logBeforeTimeout } from '@firestone-hs/aws-lambda-utils';
+import { S3, getConnection, logBeforeTimeout } from '@firestone-hs/aws-lambda-utils';
 import { ALL_CLASSES } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
+import { gzipSync } from 'zlib';
 import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../common/config';
 import { DeckStat } from '../model';
 
 export const s3 = new S3();
 
-// Build a request handler for a GET request on AWS Lambda
-// URL is base/:format/:rank/:timePeriod/:deckId
 export default async (event, context: Context): Promise<any> => {
 	const cleanup = logBeforeTimeout(context);
 	console.log('handling event', event);
@@ -21,38 +20,41 @@ export default async (event, context: Context): Promise<any> => {
 		cleanup();
 		return {
 			statusCode: 400,
-			body: JSON.stringify({ error: 'format, rank, timePeriod and deckId are all required' }),
+			body: JSON.stringify({
+				error: 'format, rank, timePeriod and deckId are all required',
+				timestamp: Date.now(),
+			}),
 		};
 	}
 
-	const mysql = await getConnectionReadOnly();
-	const query = `
-	    SELECT *
-	    FROM constructed_deck_stats
-	    WHERE
-	        format = '${format}'
-	        AND rankBracket = '${rank}'
-	        AND timePeriod = '${timePeriod}'
-	        AND deckId = '${deckId}'
-			AND lastUpdateDate > DATE_SUB(NOW(), INTERVAL 1 DAY)
-	`;
-	// console.debug('query', query);
-	const result: any = await mysql.query(query);
-	mysql.end();
+	// const mysql = await getConnectionReadOnly();
+	// const query = `
+	//     SELECT *
+	//     FROM constructed_deck_stats
+	//     WHERE
+	//         format = '${format}'
+	//         AND rankBracket = '${rank}'
+	//         AND timePeriod = '${timePeriod}'
+	//         AND deckId = '${deckId}'
+	// 		AND lastUpdateDate > DATE_SUB(NOW(), INTERVAL 1 DAY)
+	// `;
+	// // console.debug('query', query);
+	// const result: any = await mysql.query(query);
+	// mysql.end();
 
-	const cachedDeckStr: string = result?.[0]?.deckData;
-	if (cachedDeckStr?.length > 0) {
-		cleanup();
-		return {
-			statusCode: 200,
-			headers: {
-				'Cache-Control': 'public, max-age=3600',
-				'Content-Type': 'application/json',
-				'X-Timestamp': Date.now(),
-			},
-			body: cachedDeckStr,
-		};
-	}
+	// const cachedDeckStr: string = result?.[0]?.deckData;
+	// if (cachedDeckStr?.length > 0) {
+	// 	cleanup();
+	// 	return {
+	// 		statusCode: 200,
+	// 		headers: {
+	// 			'Cache-Control': 'public, max-age=3600',
+	// 			'Content-Type': 'application/json',
+	// 			'X-Timestamp': Date.now(),
+	// 		},
+	// 		body: cachedDeckStr,
+	// 	};
+	// }
 
 	// The cached deck is not available, let's try to read it from S3
 	const deck = await readDeckFromS3(format, rank, timePeriod, deckId);
@@ -60,22 +62,27 @@ export default async (event, context: Context): Promise<any> => {
 		cleanup();
 		return {
 			statusCode: 404,
-			body: JSON.stringify({ error: 'deck not found' }),
+			body: JSON.stringify({ error: 'deck not found', timestamp: Date.now() }),
 		};
 	}
 
-	await updateDeckInDb(format, rank, timePeriod, deckId, deck);
+	// await updateDeckInDb(format, rank, timePeriod, deckId, deck);
 	cleanup();
-	return {
-		statusCode: 200,
-		headers: {
-			'Cache-Control': 'public, max-age=3600',
-			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify({
+	const zippedDeck = gzipSync(
+		JSON.stringify({
 			...deck,
 			timestamp: Date.now(),
 		}),
+	).toString('base64');
+	return {
+		statusCode: 200,
+		isBase64Encoded: true,
+		headers: {
+			'Cache-Control': `public, max-age=${12 * 3600}`,
+			'Content-Type': 'text/html',
+			'Content-Encoding': 'gzip',
+		},
+		body: zippedDeck,
 	};
 };
 
