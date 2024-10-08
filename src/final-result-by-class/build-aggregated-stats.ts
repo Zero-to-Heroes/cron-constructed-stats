@@ -41,7 +41,7 @@ export default async (event, context: Context): Promise<any> => {
 	const rankBracket: RankBracket = event.rankBracket;
 	const playerClass: string = event.playerClass;
 
-	console.log('aggregating data', format, timePeriod, rankBracket, playerClass);
+	// console.log('aggregating data', format, timePeriod, rankBracket, playerClass);
 	const patchInfo = format === 'twist' ? await getLastTwistPatch() : await getLastConstructedPatch();
 	if (!patchInfo) {
 		console.error('Could not retrieve patch info', format);
@@ -130,7 +130,7 @@ const dispatchFormatEvents = async (context: Context) => {
 	const allFormats: readonly GameFormat[] = ALL_FORMATS;
 	// const allFormats: readonly GameFormat[] = ['standard'];
 	for (const format of allFormats) {
-		console.log('dispatching events for format', format);
+		// console.log('dispatching events for format', format);
 		const newEvent = {
 			dailyProcessing: true,
 			format: format,
@@ -166,7 +166,7 @@ const dispatchEvents = async (context: Context, format: GameFormat) => {
 	for (const timePeriod of allTimePeriod) {
 		for (const rankBracket of allRankBracket) {
 			for (const playerClass of ALL_CLASSES) {
-				console.log('dispatching events for timePeriod, rank and class', timePeriod, rankBracket, playerClass);
+				// console.log('dispatching events for timePeriod, rank and class', timePeriod, rankBracket, playerClass);
 				const newEvent = {
 					dailyProcessing: true,
 					timePeriod: timePeriod,

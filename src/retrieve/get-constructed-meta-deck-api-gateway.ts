@@ -10,16 +10,13 @@ export const s3 = new S3();
 // URL is base/:format/:rank/:timePeriod/:deckId
 export default async (event, context: Context): Promise<any> => {
 	const cleanup = logBeforeTimeout(context);
-	// console.log('handling event', event);
-	const rawPath: string = event.rawPath;
-	const path = rawPath.startsWith('//') ? rawPath.substring(2) : rawPath.substring(1);
-	// console.debug('path', path);
-	const format = path.split('/')[0];
-	const rank = path.split('/')[1];
-	const timePeriod = path.split('/')[2];
-	const encodedDeckId = path.split('/')[3];
+	console.log('handling event', event);
+	const format = event.queryStringParameters.format;
+	const rank = event.queryStringParameters.rank;
+	const timePeriod = event.queryStringParameters.timePeriod;
+	const encodedDeckId = event.queryStringParameters.deckId;
 	const deckId = decodeURIComponent(encodedDeckId).replaceAll('/', '-');
-	// console.debug('arguments', format, rank, timePeriod, deckId);
+	console.debug('arguments', format, rank, timePeriod, deckId);
 	if (!format || !rank || !timePeriod || !deckId) {
 		cleanup();
 		return {
@@ -51,6 +48,7 @@ export default async (event, context: Context): Promise<any> => {
 			headers: {
 				'Cache-Control': 'public, max-age=3600',
 				'Content-Type': 'application/json',
+				'X-Timestamp': Date.now(),
 			},
 			body: cachedDeckStr,
 		};
@@ -74,7 +72,10 @@ export default async (event, context: Context): Promise<any> => {
 			'Cache-Control': 'public, max-age=3600',
 			'Content-Type': 'application/json',
 		},
-		body: JSON.stringify(deck),
+		body: JSON.stringify({
+			...deck,
+			timestamp: Date.now(),
+		}),
 	};
 };
 

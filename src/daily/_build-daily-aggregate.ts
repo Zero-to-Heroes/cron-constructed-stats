@@ -39,7 +39,7 @@ export default async (event, context: Context): Promise<any> => {
 	const rankBracket: RankBracket = event.rankBracket;
 	const targetDate: string = event.targetDate || yesterdayDate();
 
-	console.log('aggregating daily data', format, rankBracket, targetDate);
+	// console.log('aggregating daily data', format, rankBracket, targetDate);
 	const dailyDeckStats: readonly DeckStat[] = await mergeAllHourlyStatsForTheDay(
 		format,
 		rankBracket,
@@ -131,7 +131,7 @@ const dispatchCatchUpEvents = async (context: Context, numberOfDays: number) => 
 	}
 
 	for (const targetDate of days) {
-		console.log('dispatching catch-up for date', targetDate);
+		// console.log('dispatching catch-up for date', targetDate);
 		const newEvent = {
 			targetDate: targetDate,
 		};

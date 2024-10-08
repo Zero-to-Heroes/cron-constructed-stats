@@ -4,7 +4,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Build constructed stats
 
-
 Resources:
     BuildHourlyConstructedDeckStats:
         Type: AWS::Serverless::Function
@@ -152,10 +151,10 @@ Resources:
             Handler: retrieve/get-constructed-meta-deck.default
             Runtime: nodejs18.x
             Timeout: 15
-            MemorySize: 2000
+            MemorySize: 512
             CodeUri: ./dist/retrieve/get-constructed-meta-deck
-            # Layers:
-            #     - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
+            Layers:
+                - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
             Policies:
                 - AWSLambdaVPCAccessExecutionRole
                 - AmazonSESFullAccess
@@ -171,3 +170,64 @@ Resources:
             FunctionUrlConfig:
                 AuthType: NONE
 
+
+
+    ApiGatewayRestApi:
+        Type: AWS::Serverless::Api
+        Cors:
+            AllowMethods: "'*'"
+            AllowHeaders: "'*'"
+            AllowOrigin: "'*'"
+        Properties:
+            Name: ConstructedDeckDetailsApi
+            StageName: prod
+            CacheClusterEnabled: true
+            CacheClusterSize: '1.6'
+            MethodSettings:
+                - HttpMethod: '*'
+                  CacheTtlInSeconds: 3600
+                  ResourcePath: "/*"
+                  CachingEnabled: true
+                  LoggingLevel: ERROR
+
+    RetrieveConstructedDeckDetailsViaApiGateway:
+        Type: AWS::Serverless::Function
+        Properties:
+            Handler: retrieve/get-constructed-meta-deck-api-gateway.default
+            Runtime: nodejs18.x
+            Timeout: 15
+            MemorySize: 512
+            CodeUri: ./dist/retrieve/get-constructed-meta-deck-api-gateway
+            # Layers:
+            #     - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
+            Policies:
+                - AWSLambdaVPCAccessExecutionRole
+                - AmazonSESFullAccess
+                - SecretsManagerReadWrite
+                - AmazonSNSReadOnlyAccess
+                - AmazonS3FullAccess
+                - AWSLambda_FullAccess
+                - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+                # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
+            Tags:
+                LambdaName: api-get-constructed-meta-deck-api-gateway
+            Events:
+                ApiGateway:
+                    Type: Api
+                    Properties:
+                        Path: /constructed-meta-deck
+                        Method: GET
+                        RestApiId: !Ref ApiGatewayRestApi
+                        RequestParameters:
+                            - method.request.querystring.format: 
+                                Required: true
+                                Caching: true
+                            - method.request.querystring.rank: 
+                                Required: true
+                                Caching: true
+                            - method.request.querystring.timePeriod: 
+                                Required: true
+                                Caching: true
+                            - method.request.querystring.deckId: 
+                                Required: true
+                                Caching: true
