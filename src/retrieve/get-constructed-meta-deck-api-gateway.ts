@@ -7,6 +7,11 @@ import { DeckStat } from '../model';
 
 export const s3 = new S3();
 
+const globalDeckIdCache = {};
+const globalDeckCache = {};
+const globalDeckIdLastUpdate = null;
+const DECK_ID_VALIDITY = 1000 * 60 * 60 * 3; // 3 hours
+
 export default async (event, context: Context): Promise<any> => {
 	const cleanup = logBeforeTimeout(context);
 	console.log('handling event', event);
@@ -56,6 +61,21 @@ export default async (event, context: Context): Promise<any> => {
 	// 	};
 	// }
 
+	const cachedDeck = globalDeckCache[deckId];
+	if (cachedDeck) {
+		cleanup();
+		return {
+			statusCode: 200,
+			isBase64Encoded: true,
+			headers: {
+				'Cache-Control': `public, max-age=${12 * 3600}`,
+				'Content-Type': 'text/html',
+				'Content-Encoding': 'gzip',
+			},
+			body: cachedDeck,
+		};
+	}
+
 	// The cached deck is not available, let's try to read it from S3
 	const deck = await readDeckFromS3(format, rank, timePeriod, deckId);
 	if (!deck) {
@@ -74,6 +94,7 @@ export default async (event, context: Context): Promise<any> => {
 			timestamp: Date.now(),
 		}),
 	).toString('base64');
+	globalDeckCache[deckId] = zippedDeck;
 	return {
 		statusCode: 200,
 		isBase64Encoded: true,
@@ -122,34 +143,36 @@ const updateDeckInDb = async (format: string, rank: string, timePeriod: string, 
 	mysql.end();
 };
 
+// Read the deck aggregates from all classes, and picks the correct deck from there
 const readDeckFromS3 = async (format: string, rank: string, timePeriod: string, deckId: string): Promise<DeckStat> => {
 	const s3 = new S3();
-	const deckIdMap = {};
-	// console.log('reading deck from S3', format, rank, timePeriod, deckId);
-	await Promise.all(
-		ALL_CLASSES.map((playerClass) => {
-			const filename = `${DECK_STATS_KEY_PREFIX}/decks/${format}/${rank}/${timePeriod}/all-decks-ids-${playerClass}.gz.json`;
-			// console.log('reading fileName', filename)
-			return s3.readGzipContent(DECK_STATS_BUCKET, filename, 1, false, 300).then((deckIds) => {
-				// if (!deckIds?.length) {
-				// 	console.warn('missing deck ids', filename);
-				// }
-				const allDeckIds: readonly string[] = JSON.parse(deckIds);
-				allDeckIds.forEach((deckId) => {
-					deckIdMap[deckId] = playerClass;
-				});
-			});
-		}),
-	);
-	// console.log('all deck ids', Object.keys(deckIdMap).length, deckId, Object.keys(deckIdMap));
 
-	const playerClass = deckIdMap[deckId];
-	// console.log('playerClass', playerClass);
+	if (
+		!globalDeckIdCache ||
+		!Object.keys(globalDeckIdCache).length ||
+		!globalDeckIdLastUpdate ||
+		Date.now() - globalDeckIdLastUpdate > DECK_ID_VALIDITY
+	) {
+		// First map each deck id to a class
+		await Promise.all(
+			ALL_CLASSES.map((playerClass) => {
+				const filename = `${DECK_STATS_KEY_PREFIX}/decks/${format}/${rank}/${timePeriod}/all-decks-ids-${playerClass}.gz.json`;
+				return s3.readGzipContent(DECK_STATS_BUCKET, filename, 1, false, 300).then((deckIds) => {
+					const allDeckIds: readonly string[] = JSON.parse(deckIds);
+					allDeckIds.forEach((deckId) => {
+						globalDeckIdCache[deckId] = playerClass;
+					});
+				});
+			}),
+		);
+	}
+	const playerClass = globalDeckIdCache[deckId];
 	if (!playerClass) {
-		// console.error('missing deck id', deckId);
+		console.error('missing deck id', deckId);
 		return null;
 	}
 
+	// Then read the actual deck contents
 	const allDecksStr = await s3.readGzipContent(
 		DECK_STATS_BUCKET,
 		`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rank}/${timePeriod}/all-decks-${playerClass}.gz.json`,
@@ -157,43 +180,8 @@ const readDeckFromS3 = async (format: string, rank: string, timePeriod: string, 
 		false,
 		300,
 	);
-	// Size of the string in MB
-	const size = Buffer.byteLength(allDecksStr, 'utf8') / 1024 / 1024;
-	// console.log(
-	// 	'fetched all decks raw string',
-	// 	`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rank}/${timePeriod}/all-decks-${playerClass}.gz.json`,
-	// 	`${size} MB`,
-	// );
+	// const size = Buffer.byteLength(allDecksStr, 'utf8') / 1024 / 1024;
 	const allDecks: readonly DeckStat[] = JSON.parse(allDecksStr);
-	// console.log('all decks', allDecks.length);
 	const deck = allDecks.find((deck: DeckStat) => deck.decklist.replaceAll('/', '-') === deckId);
-	// console.log('deck', deck);
 	return deck;
-
-	// for (const playerClass of ALL_CLASSES) {
-	// 	const content = await s3.readGzipContent(
-	// 		DECK_STATS_BUCKET,
-	// 		`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rank}/${timePeriod}/all-decks-ids-${playerClass}.gz.json`,
-	// 		1,
-	// 		false,
-	// 		300,
-	// 	);
-	// 	const allDeckIds: readonly string[] = JSON.parse(content);
-	// 	if (allDeckIds.includes(deckId)) {
-	// 		const allDecksStr = await s3.readGzipContent(
-	// 			DECK_STATS_BUCKET,
-	// 			`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rank}/${timePeriod}/all-decks-${playerClass}.gz.json`,
-	// 			1,
-	// 			false,
-	// 			300,
-	// 		);
-	// 		const allDecks: readonly DeckStat[] = JSON.parse(allDecksStr);
-	// 		const deck = allDecks.find(
-	// 			(deck: DeckStat) => encodeURIComponent(deck.decklist.replaceAll('/', '-')) === deckId,
-	// 		);
-	// 		return deck;
-	// 	}
-	// }
-
-	// return null;
 };
