@@ -7,7 +7,7 @@ import { DeckStat } from '../model';
 
 export const s3 = new S3();
 
-const globalDeckIdCache = {};
+let globalDeckIdCache = {};
 const globalDeckCache = {};
 const globalDeckIdLastUpdate = null;
 const DECK_ID_VALIDITY = 1000 * 60 * 60 * 3; // 3 hours
@@ -161,6 +161,8 @@ const readDeckFromS3 = async (format: string, rank: string, timePeriod: string, 
 		!globalDeckIdLastUpdate ||
 		Date.now() - globalDeckIdLastUpdate > DECK_ID_VALIDITY
 	) {
+		console.debug('rebulding deck id cache', Object.keys(globalDeckIdCache).length);
+		globalDeckIdCache = {};
 		// First map each deck id to a class
 		await Promise.all(
 			ALL_CLASSES.map((playerClass) => {
