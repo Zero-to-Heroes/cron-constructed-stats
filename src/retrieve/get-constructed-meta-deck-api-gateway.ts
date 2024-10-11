@@ -102,7 +102,7 @@ export default async (event, context: Context): Promise<any> => {
 			timestamp: Date.now(),
 		}),
 	).toString('base64');
-	globalDeckCache[deckId] = zippedDeck;
+	// globalDeckCache[deckId] = zippedDeck;
 	return {
 		statusCode: 200,
 		isBase64Encoded: true,
