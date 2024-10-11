@@ -14,13 +14,21 @@ const DECK_ID_VALIDITY = 1000 * 60 * 60 * 3; // 3 hours
 
 export default async (event, context: Context): Promise<any> => {
 	const cleanup = logBeforeTimeout(context);
-	console.log('handling event', event);
+	// console.log('handling event', event);
 	const format = event.queryStringParameters.format;
 	const rank = event.queryStringParameters.rank;
 	const timePeriod = event.queryStringParameters.timePeriod;
 	const encodedDeckId = event.queryStringParameters.deckId;
 	const deckId = decodeURIComponent(encodedDeckId).replaceAll('/', '-');
-	console.debug('arguments', format, rank, timePeriod, deckId);
+	console.debug(
+		'arguments',
+		format,
+		rank,
+		timePeriod,
+		deckId,
+		Object.values(globalDeckCache).length,
+		Object.values(globalDeckIdCache).length,
+	);
 	if (!format || !rank || !timePeriod || !deckId) {
 		cleanup();
 		return {
