@@ -43,8 +43,8 @@ Resources:
             CodeUri: ./dist/daily/_build-daily-aggregate
             MemorySize: 5000
             ReservedConcurrentExecutions: 10
-            Layers:
-                - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
+            # Layers:
+            #     - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
             Policies:
                 - AWSLambdaVPCAccessExecutionRole
                 - AmazonSESFullAccess
@@ -72,8 +72,8 @@ Resources:
             CodeUri: ./dist/final-result-by-class/build-aggregated-stats
             MemorySize: 10000 
             ReservedConcurrentExecutions: 10 # Need to investigate locks. To avoid lock races when inserting data in DB
-            Layers:
-                - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
+            # Layers:
+            #     - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
             Policies:
                 - AWSLambdaVPCAccessExecutionRole
                 - AmazonSESFullAccess
@@ -153,8 +153,8 @@ Resources:
             Timeout: 15
             MemorySize: 512
             CodeUri: ./dist/retrieve/get-constructed-meta-deck
-            Layers:
-                - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
+            # Layers:
+            #     - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
             Policies:
                 - AWSLambdaVPCAccessExecutionRole
                 - AmazonSESFullAccess
