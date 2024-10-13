@@ -1,4 +1,4 @@
-import { S3, getConnection, logBeforeTimeout } from '@firestone-hs/aws-lambda-utils';
+import { S3, logBeforeTimeout } from '@firestone-hs/aws-lambda-utils';
 import { ALL_CLASSES } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
 import { gzipSync } from 'zlib';
@@ -115,43 +115,44 @@ export default async (event, context: Context): Promise<any> => {
 	};
 };
 
-const updateDeckInDb = async (format: string, rank: string, timePeriod: string, deckId: string, deck: DeckStat) => {
-	if (!deck) {
-		return;
-	}
+// const updateDeckInDb = async (format: string, rank: string, timePeriod: string, deckId: string, deck: DeckStat) => {
+// 	if (!deck) {
+// 		return;
+// 	}
 
-	const updatedDeck: DeckStat = {
-		...deck,
-		cardsData: deck.cardsData.filter((c) => c.inStartingDeck > deck.totalGames / 50),
-	};
+// 	const updatedDeck: DeckStat = {
+// 		...deck,
+// 		cardsData: deck.cardsData.filter((c) => c.inStartingDeck > deck.totalGames / 50),
+// 	};
 
-	const mysql = await getConnection();
-	const query = `
-	    INSERT INTO constructed_deck_stats (
-	        format,
-	        rankBracket,
-	        timePeriod,
-	        deckId,
-	        deckData,
-	        lastUpdateDate
-	    ) VALUES (
-	        '${format}',
-	        '${rank}',
-	        '${timePeriod}',
-	        '${deckId}',
-	        '${JSON.stringify(updatedDeck)}',
-	        NOW()
-	    )
-	    ON DUPLICATE KEY UPDATE
-	        deckData = '${JSON.stringify(updatedDeck)}',
-	        lastUpdateDate = NOW()
-	`;
-	// console.debug('updating deck in db', deckId);
-	await mysql.query(query);
-	mysql.end();
-};
+// 	const mysql = await getConnection();
+// 	const query = `
+// 	    INSERT INTO constructed_deck_stats (
+// 	        format,
+// 	        rankBracket,
+// 	        timePeriod,
+// 	        deckId,
+// 	        deckData,
+// 	        lastUpdateDate
+// 	    ) VALUES (
+// 	        '${format}',
+// 	        '${rank}',
+// 	        '${timePeriod}',
+// 	        '${deckId}',
+// 	        '${JSON.stringify(updatedDeck)}',
+// 	        NOW()
+// 	    )
+// 	    ON DUPLICATE KEY UPDATE
+// 	        deckData = '${JSON.stringify(updatedDeck)}',
+// 	        lastUpdateDate = NOW()
+// 	`;
+// 	// console.debug('updating deck in db', deckId);
+// 	await mysql.query(query);
+// 	mysql.end();
+// };
 
 // Read the deck aggregates from all classes, and picks the correct deck from there
+
 const readDeckFromS3 = async (format: string, rank: string, timePeriod: string, deckId: string): Promise<DeckStat> => {
 	const s3 = new S3();
 
