@@ -41,7 +41,7 @@ Resources:
             Runtime: nodejs18.x
             Timeout: 880
             CodeUri: ./dist/daily/_build-daily-aggregate
-            MemorySize: 5000
+            MemorySize: 8000
             ReservedConcurrentExecutions: 10
             # Layers:
             #     - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"

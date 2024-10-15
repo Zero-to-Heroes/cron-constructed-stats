@@ -2,7 +2,7 @@ import { S3, logBeforeTimeout, sleep } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
 import AWS from 'aws-sdk';
-import { ALL_FORMATS } from '../common/config';
+import { ALL_FORMATS, DAILY_DECK_STATS_GAMES_THRESHOLD } from '../common/config';
 import { DeckStat, GameFormat, RankBracket } from '../model';
 import { mergeAllHourlyStatsForTheDay } from './data-aggregation-deck';
 import { persistData } from './s3-saver';
@@ -39,7 +39,7 @@ export default async (event, context: Context): Promise<any> => {
 	const rankBracket: RankBracket = event.rankBracket;
 	const targetDate: string = event.targetDate || yesterdayDate();
 
-	// console.log('aggregating daily data', format, rankBracket, targetDate);
+	console.log('aggregating daily data', format, rankBracket, targetDate);
 	const dailyDeckStats: readonly DeckStat[] = await mergeAllHourlyStatsForTheDay(
 		format,
 		rankBracket,
@@ -50,6 +50,9 @@ export default async (event, context: Context): Promise<any> => {
 		console.warn('no deck stats for', format, rankBracket, targetDate);
 		return;
 	}
+
+	const filtered = dailyDeckStats.filter((d) => d.totalGames > DAILY_DECK_STATS_GAMES_THRESHOLD);
+	console.log('filtered', dailyDeckStats.length, 'to', filtered.length, 'for', format, rankBracket, targetDate);
 
 	const lastUpdateInfo = dailyDeckStats
 		.map((d) => ({
@@ -62,16 +65,16 @@ export default async (event, context: Context): Promise<any> => {
 	if (!lastUpdate) {
 		console.error(
 			'could not find last update date',
-			dailyDeckStats.map((d) => ({
-				date: new Date(d.lastUpdate),
-				dateStr: d.lastUpdate,
-				time: new Date(d.lastUpdate).getTime(),
-			})),
+			// dailyDeckStats.map((d) => ({
+			// 	date: new Date(d.lastUpdate),
+			// 	dateStr: d.lastUpdate,
+			// 	time: new Date(d.lastUpdate).getTime(),
+			// })),
 		);
 		throw new Error('could not find last update date');
 	}
 	// console.log('loaded daily deck data', format, dailyDeckStats.length, lastUpdate, lastUpdateInfo);
-	await persistData(dailyDeckStats, lastUpdate, format, rankBracket, targetDate);
+	await persistData(filtered, lastUpdate, format, rankBracket, targetDate);
 	cleanup();
 };
 
