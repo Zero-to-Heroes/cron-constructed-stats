@@ -1,10 +1,7 @@
 /* eslint-disable no-async-promise-executor */
-import { getConnection, sleep } from '@firestone-hs/aws-lambda-utils';
 import { gzipSync } from 'zlib';
 import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../common/config';
-import { getHashNumberFromDecklist } from '../common/utils';
 import { ArchetypeStat, ArchetypeStats, DeckStat, DeckStats, GameFormat, RankBracket, TimePeriod } from '../model';
-import { chunk } from '../utils';
 import { s3 } from './build-aggregated-stats';
 
 export const persistData = async (
@@ -167,118 +164,6 @@ const saveDecksS3 = async (
 		'application/json',
 		'gzip',
 	);
-
-	// const chunks = chunk(workingCopy, 10);
-
-	// for (const chunk of chunks) {
-	// 	const result: readonly boolean[] = await Promise.all(
-	// 		chunk.map((deck) => {
-	// 			const deckId = encodeURIComponent(deck.decklist.replaceAll('/', '-'));
-	// 			const gzippedResult = gzipSync(JSON.stringify(deck));
-	// 			return s3.writeFile(
-	// 				gzippedResult,
-	// 				DECK_STATS_BUCKET,
-	// 				`${DECK_STATS_KEY_PREFIX}/decks/${format}/${rankBracket}/${timePeriod}/deck/${deckId}.gz.json`,
-	// 				'application/json',
-	// 				'gzip',
-	// 			);
-	// 		}),
-	// 	);
-	// 	console.log('uploaded successfully', result.filter((r) => r).length, '/', chunk.length, 'decks');
-	// }
-};
-
-const saveDecksSql = async (
-	workingCopy: readonly DeckStat[],
-	lastUpdate: Date,
-	rankBracket: RankBracket,
-	timePeriod: TimePeriod,
-	format: GameFormat,
-) => {
-	const chunks = chunk(workingCopy, 1);
-
-	const mysql = await getConnection();
-	try {
-		// Try to insert based on format, rankBracket, timePeriod and if it exists, update
-		// the existing row
-		for (const chunk of chunks) {
-			await saveDeckChunk(mysql, chunk, lastUpdate, rankBracket, timePeriod, format);
-			// break;
-		}
-	} finally {
-		mysql.end();
-	}
-};
-
-const saveDeckChunk = async (
-	mysql,
-	chunk: readonly DeckStat[],
-	lastUpdate: Date,
-	rankBracket: RankBracket,
-	timePeriod: TimePeriod,
-	format: GameFormat,
-) => {
-	// New decks are saved every 12 hours, and we spread them over time
-	const currentHour = new Date().getUTCHours() % 12;
-	const values = chunk
-		.filter((d) => getHashNumberFromDecklist(d.decklist) % 12 === currentHour)
-		.map((deck) => {
-			const deckId = deck.decklist.replaceAll('/', '-');
-			return [lastUpdate, format, rankBracket, timePeriod, deckId, JSON.stringify(deck)];
-		});
-	// console.debug('saving decks chunk', chunk.length, values.length);
-	try {
-		await saveDecksChunkInternal(mysql, values);
-		// console.debug('chunk saved');
-	} catch (error) {
-		if (error.code === 'ER_NET_PACKET_TOO_LARGE') {
-			console.log('ER_NET_PACKET_TOO_LARGE detected, splitting chunk', chunk.length);
-			const splitFactor = 2;
-			// Split the chunk array into "splitFactor" chunks of similar size
-			const splitChunks = chunk.reduce((result, value, index, array) => {
-				const chunkIndex = Math.floor(index / (array.length / splitFactor));
-				if (!result[chunkIndex]) {
-					result[chunkIndex] = []; // start a new chunk
-				}
-				result[chunkIndex].push(value);
-				return result;
-			}, []);
-			// console.log('split chunk', splitChunks.length);
-			for (const splitChunk of splitChunks) {
-				await saveDeckChunk(mysql, splitChunk, lastUpdate, rankBracket, timePeriod, format);
-			}
-		}
-	}
-};
-
-const defaultRetries = 15;
-const saveDecksChunkInternal = async (mysql, values: any[][], retries = defaultRetries) => {
-	while (retries > 0) {
-		try {
-			const query = `
-                INSERT INTO constructed_deck_stats
-                (lastUpdateDate, format, rankBracket, timePeriod, deckId, deckData)
-                VALUES ?
-                ON DUPLICATE KEY UPDATE
-                deckData = VALUES(deckData),
-                lastUpdateDate = VALUES(lastUpdateDate)
-            `;
-			const result = await mysql.query(query, [values]);
-			if (retries != defaultRetries) {
-				console.log('retry successful', retries);
-			}
-			return;
-		} catch (error) {
-			if (error.code === 'ER_LOCK_DEADLOCK' && retries > 0) {
-				console.log('Deadlock detected, retrying operation...', retries);
-				await sleep(200);
-				retries--;
-			} else {
-				throw error;
-			}
-		}
-	}
-	throw new Error('Max retries exceeded');
 };
 
 const saveDetailedArchetypeStats = async (

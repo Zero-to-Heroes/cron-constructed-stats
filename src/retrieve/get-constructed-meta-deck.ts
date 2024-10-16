@@ -1,6 +1,7 @@
-import { S3, getConnection, getConnectionReadOnly, logBeforeTimeout } from '@firestone-hs/aws-lambda-utils';
+import { S3, getConnection, logBeforeTimeout } from '@firestone-hs/aws-lambda-utils';
 import { ALL_CLASSES } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
+import { ServerlessMysql } from 'serverless-mysql';
 import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../common/config';
 import { DeckStat } from '../model';
 
@@ -28,7 +29,7 @@ export default async (event, context: Context): Promise<any> => {
 		};
 	}
 
-	const mysql = await getConnectionReadOnly();
+	const mysql = await getConnection();
 	const query = `
 	    SELECT *
 	    FROM constructed_deck_stats
@@ -41,10 +42,10 @@ export default async (event, context: Context): Promise<any> => {
 	`;
 	// console.debug('query', query);
 	const result: any = await mysql.query(query);
-	mysql.end();
 
 	const cachedDeckStr: string = result?.[0]?.deckData;
 	if (cachedDeckStr?.length > 0) {
+		mysql.end();
 		cleanup();
 		return {
 			statusCode: 200,
@@ -59,6 +60,7 @@ export default async (event, context: Context): Promise<any> => {
 	// The cached deck is not available, let's try to read it from S3
 	const deck = await readDeckFromS3(format, rank, timePeriod, deckId);
 	if (!deck) {
+		mysql.end();
 		cleanup();
 		return {
 			statusCode: 404,
@@ -66,7 +68,8 @@ export default async (event, context: Context): Promise<any> => {
 		};
 	}
 
-	await updateDeckInDb(format, rank, timePeriod, deckId, deck);
+	await updateDeckInDb(mysql, format, rank, timePeriod, deckId, deck);
+	mysql.end();
 	cleanup();
 	return {
 		statusCode: 200,
@@ -78,7 +81,14 @@ export default async (event, context: Context): Promise<any> => {
 	};
 };
 
-const updateDeckInDb = async (format: string, rank: string, timePeriod: string, deckId: string, deck: DeckStat) => {
+const updateDeckInDb = async (
+	mysql: ServerlessMysql,
+	format: string,
+	rank: string,
+	timePeriod: string,
+	deckId: string,
+	deck: DeckStat,
+) => {
 	if (!deck) {
 		return;
 	}
@@ -88,7 +98,6 @@ const updateDeckInDb = async (format: string, rank: string, timePeriod: string, 
 		cardsData: deck.cardsData.filter((c) => c.inStartingDeck > deck.totalGames / 50),
 	};
 
-	const mysql = await getConnection();
 	const query = `
 	    INSERT INTO constructed_deck_stats (
 	        format,
@@ -111,7 +120,6 @@ const updateDeckInDb = async (format: string, rank: string, timePeriod: string, 
 	`;
 	// console.debug('updating deck in db', deckId);
 	await mysql.query(query);
-	mysql.end();
 };
 
 const readDeckFromS3 = async (format: string, rank: string, timePeriod: string, deckId: string): Promise<DeckStat> => {

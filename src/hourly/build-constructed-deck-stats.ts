@@ -43,22 +43,12 @@ export default async (event, context: Context): Promise<any> => {
 	console.log('reading rows from s3', format, rankBracket);
 	const allRows: readonly ConstructedMatchStatDbRow[] = await readRowsFromS3(format, startDate, s3);
 	const rows = allRows.filter((r) => r.format === format);
-	// console.log('\t', 'loaded rows', rows.length);
-	// const mysql = await getConnectionReadOnly();
-	// const archetypes = await loadArchetypes(mysql);
-	// mysql.end();
-	// console.log('\t', 'loaded archetypes', archetypes.length);
 	const relevantRows = rows.filter((r) => isCorrectRank(r, rankBracket));
-	// console.log('\t', 'relevantRows', relevantRows.length, rankBracket);
 	const lastGameDate = relevantRows
 		.map((r) => new Date(r.creationDate))
 		.sort()
 		.reverse()[0];
-	// const archetypeStats = buildArchetypes(relevantRows, archetypes, format, allCards);
-	// console.log('\t', 'built archetype stats', archetypeStats.length);
 	const deckStats: readonly DeckStat[] = buildDeckStats(relevantRows, rankBracket, format, allCards);
-	// const enhancedArchetypes = enhanceArchetypeStats(, deckStats);
-	// console.log('\t', 'built deck stats', deckStats.length);
 	await saveDeckStats(deckStats, lastGameDate, rankBracket, format, startDate);
 	cleanup();
 
