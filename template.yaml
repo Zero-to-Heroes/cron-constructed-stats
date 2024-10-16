@@ -13,7 +13,7 @@ Resources:
             Timeout: 880
             CodeUri: ./dist/hourly/build-constructed-deck-stats
             MemorySize: 6000
-            ReservedConcurrentExecutions: 10
+            ReservedConcurrentExecutions: 5
             # Layers:
             #     - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
             Policies:
