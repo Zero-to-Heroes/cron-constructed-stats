@@ -14,6 +14,11 @@ Resources:
             CodeUri: ./dist/hourly/build-constructed-deck-stats
             MemorySize: 6000
             ReservedConcurrentExecutions: 5
+            VpcConfig:
+                SecurityGroupIds:
+                    - sg-eccd2691
+                SubnetIds:
+                    - subnet-894624ec # Only the private subnet
             # Layers:
             #     - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
             Policies:
@@ -24,6 +29,8 @@ Resources:
                 - AmazonS3FullAccess
                 - AWSLambda_FullAccess
                 - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+                # For VPC
+                - AWSLambdaENIManagementAccess
                 # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
             Tags:
                 LambdaName: cron-build-hourly-constructed-deck-stats
@@ -72,16 +79,23 @@ Resources:
             CodeUri: ./dist/final-result-by-class/build-aggregated-stats
             MemorySize: 10000 
             ReservedConcurrentExecutions: 10 # Need to investigate locks. To avoid lock races when inserting data in DB
+            VpcConfig:
+                SecurityGroupIds:
+                    - sg-eccd2691
+                SubnetIds:
+                    - subnet-894624ec # Only the private subnet
             # Layers:
             #     - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
             Policies:
                 - AWSLambdaVPCAccessExecutionRole
-                - AmazonSESFullAccess
                 - SecretsManagerReadWrite
+                - AmazonSESFullAccess
                 - AmazonSNSReadOnlyAccess
                 - AmazonS3FullAccess
                 - AWSLambda_FullAccess
                 - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
+                # For VPC
+                - AWSLambdaENIManagementAccess
                 # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
             Tags:
                 LambdaName: cron-constructed-final-stats-by-class
@@ -153,6 +167,11 @@ Resources:
             Timeout: 15
             MemorySize: 512
             CodeUri: ./dist/retrieve/get-constructed-meta-deck
+            VpcConfig:
+                SecurityGroupIds:
+                    - sg-eccd2691
+                SubnetIds:
+                    - subnet-894624ec # Only the private subnet
             # Layers:
             #     - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
             Policies:
@@ -163,7 +182,9 @@ Resources:
                 - AmazonS3FullAccess
                 - AWSLambda_FullAccess
                 - arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy
-                - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
+                # For VPC
+                - AWSLambdaENIManagementAccess
+                # - arn:aws:iam::478062583808:policy/CloudWatchPolicyForLambda # See https://stackoverflow.com/questions/51166504/disable-cloudwatch-to-monitor-logs-for-lambda-function
             Tags:
                 LambdaName: api-get-constructed-meta-deck
             AutoPublishAlias: live

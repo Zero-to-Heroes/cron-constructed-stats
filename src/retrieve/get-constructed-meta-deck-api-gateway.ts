@@ -40,35 +40,6 @@ export default async (event, context: Context): Promise<any> => {
 		};
 	}
 
-	// const mysql = await getConnectionReadOnly();
-	// const query = `
-	//     SELECT *
-	//     FROM constructed_deck_stats
-	//     WHERE
-	//         format = '${format}'
-	//         AND rankBracket = '${rank}'
-	//         AND timePeriod = '${timePeriod}'
-	//         AND deckId = '${deckId}'
-	// 		AND lastUpdateDate > DATE_SUB(NOW(), INTERVAL 1 DAY)
-	// `;
-	// // console.debug('query', query);
-	// const result: any = await mysql.query(query);
-	// mysql.end();
-
-	// const cachedDeckStr: string = result?.[0]?.deckData;
-	// if (cachedDeckStr?.length > 0) {
-	// 	cleanup();
-	// 	return {
-	// 		statusCode: 200,
-	// 		headers: {
-	// 			'Cache-Control': 'public, max-age=3600',
-	// 			'Content-Type': 'application/json',
-	// 			'X-Timestamp': Date.now(),
-	// 		},
-	// 		body: cachedDeckStr,
-	// 	};
-	// }
-
 	const cachedDeck = globalDeckCache[deckId];
 	if (cachedDeck) {
 		cleanup();
@@ -114,42 +85,6 @@ export default async (event, context: Context): Promise<any> => {
 		body: zippedDeck,
 	};
 };
-
-// const updateDeckInDb = async (format: string, rank: string, timePeriod: string, deckId: string, deck: DeckStat) => {
-// 	if (!deck) {
-// 		return;
-// 	}
-
-// 	const updatedDeck: DeckStat = {
-// 		...deck,
-// 		cardsData: deck.cardsData.filter((c) => c.inStartingDeck > deck.totalGames / 50),
-// 	};
-
-// 	const mysql = await getConnection();
-// 	const query = `
-// 	    INSERT INTO constructed_deck_stats (
-// 	        format,
-// 	        rankBracket,
-// 	        timePeriod,
-// 	        deckId,
-// 	        deckData,
-// 	        lastUpdateDate
-// 	    ) VALUES (
-// 	        '${format}',
-// 	        '${rank}',
-// 	        '${timePeriod}',
-// 	        '${deckId}',
-// 	        '${JSON.stringify(updatedDeck)}',
-// 	        NOW()
-// 	    )
-// 	    ON DUPLICATE KEY UPDATE
-// 	        deckData = '${JSON.stringify(updatedDeck)}',
-// 	        lastUpdateDate = NOW()
-// 	`;
-// 	// console.debug('updating deck in db', deckId);
-// 	await mysql.query(query);
-// 	mysql.end();
-// };
 
 // Read the deck aggregates from all classes, and picks the correct deck from there
 

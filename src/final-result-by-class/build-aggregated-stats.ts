@@ -1,6 +1,6 @@
 import {
 	S3,
-	getConnectionReadOnly,
+	getConnectionProxy,
 	getLastConstructedPatch,
 	getLastTwistPatch,
 	logBeforeTimeout,
@@ -68,7 +68,7 @@ export default async (event, context: Context): Promise<any> => {
 	}
 
 	// console.time('archetypesSql');
-	const mysql = await getConnectionReadOnly();
+	const mysql = await getConnectionProxy();
 	const archetypes = await loadArchetypes(mysql);
 	mysql.end();
 	// console.timeEnd('archetypesSql');

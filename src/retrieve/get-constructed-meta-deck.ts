@@ -1,4 +1,4 @@
-import { S3, getConnection, logBeforeTimeout } from '@firestone-hs/aws-lambda-utils';
+import { S3, getConnectionProxy, logBeforeTimeout } from '@firestone-hs/aws-lambda-utils';
 import { ALL_CLASSES } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
 import { ServerlessMysql } from 'serverless-mysql';
@@ -29,7 +29,7 @@ export default async (event, context: Context): Promise<any> => {
 		};
 	}
 
-	const mysql = await getConnection();
+	const mysql = await getConnectionProxy();
 	const query = `
 	    SELECT *
 	    FROM constructed_deck_stats

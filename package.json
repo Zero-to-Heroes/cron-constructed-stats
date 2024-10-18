@@ -21,7 +21,7 @@
 	],
 	"dependencies": {
 		"@firestone-hs/assign-constructed-archetype": "^0.0.2",
-		"@firestone-hs/aws-lambda-utils": "^0.0.65",
+		"@firestone-hs/aws-lambda-utils": "^1.0.7",
 		"@firestone-hs/deckstrings": "^2.2.7",
 		"@firestone-hs/hs-replay-xml-parser": "0.0.105",
 		"@firestone-hs/reference-data": "^2.0.35",

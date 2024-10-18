@@ -1,5 +1,6 @@
-import { S3, S3Multipart } from '@firestone-hs/aws-lambda-utils';
-import { S3 as S3AWS } from 'aws-sdk';
+/* eslint-disable no-async-promise-executor */
+import { S3 as S3AWSv3 } from '@aws-sdk/client-s3';
+import { getConnectionProxy, S3, S3Multipart } from '@firestone-hs/aws-lambda-utils';
 import SecretsManager, { GetSecretValueRequest, GetSecretValueResponse } from 'aws-sdk/clients/secretsmanager';
 import { Connection, createPool } from 'mysql';
 import { Readable } from 'stream';
@@ -12,13 +13,13 @@ export const readRowsFromS3 = async (
 	startDate: string,
 	s3: S3,
 ): Promise<readonly ConstructedMatchStatDbRow[]> => {
-	return new Promise<readonly ConstructedMatchStatDbRow[]>((resolve, reject) => {
+	return new Promise<readonly ConstructedMatchStatDbRow[]>(async (resolve, reject) => {
 		const workingRowsFile = `${WORKING_ROWS_FILE.replace('%format%', format).replace('%time%', startDate)}`;
 		console.debug('reading rows from s3', workingRowsFile);
 		try {
 			let parseErrors = 0;
 			let totalParsed = 0;
-			const stream: Readable = s3.readStream('static.zerotoheroes.com', workingRowsFile);
+			const stream: Readable = await s3.readStream('static.zerotoheroes.com', workingRowsFile);
 			if (!stream) {
 				console.error('error while reading rows from S3', workingRowsFile);
 				resolve([]);
@@ -74,12 +75,12 @@ export const readRowsFromS3 = async (
 export const saveRowsOnS3 = async (format: GameFormat, startDate: string, endDate: string, s3: S3) => {
 	console.log('will export rows to S3', format);
 	const secretRequest: GetSecretValueRequest = {
-		SecretId: 'rds-connection',
+		SecretId: 'rds-proxy',
 	};
 	const secret: SecretInfo = await getSecret(secretRequest);
 	const pool = createPool({
 		connectionLimit: 1,
-		host: secret.hostReadOnly,
+		host: secret.host,
 		user: secret.username,
 		password: secret.password,
 		database: 'replay_summary',
@@ -117,11 +118,12 @@ const performRowsProcessing = async (
 	endDate: string,
 	s3: S3,
 ) => {
-	const multipartUpload = new S3Multipart(new S3AWS());
+	const multipartUpload = new S3Multipart(new S3AWSv3());
 	const workingRowsFile = `${WORKING_ROWS_FILE.replace('%format%', format).replace('%time%', startDate)}`;
 	await multipartUpload.initMultipart('static.zerotoheroes.com', workingRowsFile, 'application/json');
 	console.log('multipart upload init', workingRowsFile);
 
+	const cn = getConnectionProxy();
 	return new Promise<void>((resolve) => {
 		const queryStr = `
 			SELECT * FROM constructed_match_stats
