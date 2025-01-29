@@ -2,10 +2,16 @@
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService, GameFormat } from '@firestone-hs/reference-data';
 import { Archetype } from '../archetypes';
-import { mergeCardsData } from '../common/cards';
+import { mergeCardsData, mergeDiscoverData } from '../common/cards';
 import { CORE_CARD_THRESHOLD } from '../common/config';
 import { allClasses } from '../common/utils';
-import { ArchetypeStat, ConstructedCardData, ConstructedMatchupInfo, DeckStat } from '../model';
+import {
+	ArchetypeStat,
+	ConstructedCardData,
+	ConstructedDiscoverCardData,
+	ConstructedMatchupInfo,
+	DeckStat,
+} from '../model';
 import { round } from '../utils';
 
 export const buildArchetypeStats = (
@@ -40,18 +46,12 @@ const buildArchetypeStat = (
 	allCards: AllCardsService,
 	debug = false,
 ): ArchetypeStat => {
-	debug = debug && archetype.id === 1691; // sludge warlock
-	// if (debug) {
-	// 	// console.time('buildArchetypeStatsForArchetype');
-	// 	console.log('building stats for archetype', archetype.id, archetypeDecks.length);
-	// }
-	// debug && console.log('achetype', archetype.id, archetype.archetype);
 	const totalGames: number = archetypeDecks.flatMap((d) => d.totalGames).reduce((a, b) => a + b, 0);
 	const totalWins: number = archetypeDecks.flatMap((d) => d.totalWins).reduce((a, b) => a + b, 0);
 	const winrate: number = totalWins / totalGames;
 	const coreCards: readonly string[] = isOther(archetype.archetype) ? [] : buildCoreCards(archetypeDecks, debug);
-	// debug && console.debug('totalGames', totalGames);
 	const cardsData: readonly ConstructedCardData[] = buildCardsDataForArchetype(archetypeDecks, debug);
+	const discoverData: readonly ConstructedDiscoverCardData[] = buildDiscoverDataForArchetype(archetypeDecks);
 	const matchupInfo: readonly ConstructedMatchupInfo[] = buildMatchupInfoForArchetype(
 		archetypeDecks,
 		format,
@@ -68,12 +68,9 @@ const buildArchetypeStat = (
 		coreCards: coreCards,
 		winrate: round(winrate),
 		cardsData: cardsData.filter((d) => d.inStartingDeck > totalGames / 1000),
+		discoverData: discoverData,
 		matchupInfo: matchupInfo,
 	};
-	// if (debug) {
-	// 	// console.timeEnd('buildArchetypeStatsForArchetype');
-	// 	console.log('archetype data', result.totalGames, cardsData.find(d => d.cardId === "CFM_696"))
-	// }
 	return result;
 };
 
@@ -83,27 +80,18 @@ const buildArchetypeStat = (
 const buildCoreCards = (decks: readonly DeckStat[], debug = false): readonly string[] => {
 	const numberOfDecks = decks.length;
 	const cardsMap: { [cardId: string]: number } = {};
-	// let index = 0;
 	for (const deck of decks) {
-		// const debug2 = debug && index % 100 === 0;
-		// debug2 && console.debug('looking at deck', deck, cardsMap);
 		const cards = deck.cardsData;
 		for (const card of cards) {
 			const cardsInDeck = (card.inStartingDeck || 0) / deck.totalGames; // 1 or 2
 			cardsMap[card.cardId] = (cardsMap[card.cardId] || 0) + cardsInDeck;
-			// debug2 && console.debug('considering card', cardsMap[card.cardId], cardsInDeck, card.cardId, card);
 		}
-		// debug2 && console.debug('after looking at deck', index, cardsMap);
-		// index++;
 	}
-	// debug && console.log('cardMap', numberOfDecks, index++, cardsMap, decks[0], decks[1]);
-
 	const coreCards: string[] = [];
 	// For each card, count the number of times it appears in each deck
 	for (const cardId of Object.keys(cardsMap)) {
 		const totalCardsInDecks = cardsMap[cardId];
 		const averagePerDeck = totalCardsInDecks / numberOfDecks;
-		// debug && console.log('averagePerDeck', cardId, averagePerDeck, totalCardsInDecks, numberOfDecks);
 		if (averagePerDeck >= 2 * CORE_CARD_THRESHOLD) {
 			coreCards.push(cardId);
 			coreCards.push(cardId);
@@ -137,6 +125,11 @@ const buildMatchupInfoForArchetype = (
 				format,
 				allCards,
 			),
+			discoverData: mergeDiscoverData(
+				infoForClass.flatMap((info) => info.discoverData),
+				format,
+				allCards,
+			),
 		};
 		return result;
 	});
@@ -147,23 +140,11 @@ const buildCardsDataForArchetype = (deckStats: readonly DeckStat[], debug = fals
 	for (const deck of deckStats) {
 		let previousCardId = null;
 		const cardsData = [...deck.cardsData].sort((a, b) => (a.cardId > b.cardId ? 1 : -1));
-		// debug && console.debug('deck', deck.totalGames);
 		for (const cardData of cardsData) {
 			const isFirstDataCopy = !previousCardId || previousCardId !== cardData.cardId;
 			const existingDataContainer = cardsDataMap[cardData.cardId] ?? [];
 			cardsDataMap[cardData.cardId] = existingDataContainer;
 			let existingData: ConstructedCardData = existingDataContainer[isFirstDataCopy ? 0 : 1];
-			// debug &&
-			// 	cardData.cardId === 'WW_043' &&
-			// 	console.debug(
-			// 		'isFirstDataCopy',
-			// 		isFirstDataCopy,
-			// 		cardData.cardId,
-			// 		deck.totalGames,
-			// 		cardData.inStartingDeck,
-			// 		existingDataContainer,
-			// 		cardData,
-			// 	);
 			if (!existingData) {
 				existingData = {
 					cardId: cardData.cardId,
@@ -191,64 +172,27 @@ const buildCardsDataForArchetype = (deckStats: readonly DeckStat[], debug = fals
 		}
 	}
 	const result = Object.values(cardsDataMap).flatMap((d) => d);
-	// debug && console.log('total cards', result.length, Object.values(cardsDataMap).flatMap((d) => d).length);
-
-	// const deckCardIds: readonly { [cardId: string]: readonly string[] }[] = deckStats.map((d) =>
-	// 	groupByFunction((cardId: string) => cardId)(d.cardsData.map((c) => c.cardId)),
-	// );
-	// const uniqueCardIds = [...new Set(deckCardIds.flatMap((cards) => Object.keys(cards)))].sort();
-	// debug && console.log('uniqueCardIds', uniqueCardIds.length);
-	// debug && console.log('cardsDataMap uniqueCardIds', Object.keys(cardsDataMap).length);
-
 	return result;
+};
 
-	// // The cards for each deck, with the number of copies in each
-	// debug && console.time('cards data - group by card');
-	// const deckCardIds: readonly { [cardId: string]: readonly string[] }[] = deckStats.map((d) =>
-	// 	groupByFunction((cardId: string) => cardId)(d.cardsData.map((c) => c.cardId)),
-	// );
-	// debug && console.timeEnd('cards data - group by card');
-
-	// debug && console.time('cards data - building cards list');
-	// const uniqueCardIds = [...new Set(deckCardIds.flatMap((cards) => Object.keys(cards)))].sort();
-	// const result: ConstructedCardData[] = [];
-	// for (const cardId of uniqueCardIds) {
-	// 	const maxCopies = Math.max(...deckCardIds.map((cards) => cards[cardId]?.length ?? 0));
-	// 	for (let i = 0; i < maxCopies; i++) {
-	// 		const archetypeCardData: ConstructedCardData = {
-	// 			cardId: cardId,
-	// 			inStartingDeck: 0,
-	// 			wins: 0,
-	// 			drawnBeforeMulligan: 0,
-	// 			keptInMulligan: 0,
-	// 			inHandAfterMulligan: 0,
-	// 			inHandAfterMulliganThenWin: 0,
-	// 			drawn: 0,
-	// 			drawnThenWin: 0,
-	// 		};
-	// 		result.push(archetypeCardData);
-
-	// 		const dataForDecks = deckStats.map((d) => d.cardsData.filter((c) => c.cardId === cardId));
-	// 		for (const data of dataForDecks) {
-	// 			const deckCardData = data[i];
-	// 			if (!deckCardData) {
-	// 				continue;
-	// 			}
-
-	// 			archetypeCardData.inStartingDeck += deckCardData.inStartingDeck;
-	// 			archetypeCardData.wins += deckCardData.wins;
-	// 			archetypeCardData.drawnBeforeMulligan += deckCardData.drawnBeforeMulligan;
-	// 			archetypeCardData.keptInMulligan += deckCardData.keptInMulligan;
-	// 			archetypeCardData.inHandAfterMulligan += deckCardData.inHandAfterMulligan;
-	// 			archetypeCardData.inHandAfterMulliganThenWin += deckCardData.inHandAfterMulliganThenWin;
-	// 			archetypeCardData.drawn += deckCardData.drawn;
-	// 			archetypeCardData.drawnThenWin += deckCardData.drawnThenWin;
-	// 		}
-	// 	}
-	// }
-	// debug && console.log('total cards', result.length);
-	// debug && console.timeEnd('cards data - building cards list');
-	// return result;
+const buildDiscoverDataForArchetype = (deckStats: readonly DeckStat[]): readonly ConstructedDiscoverCardData[] => {
+	const discoverDataMap: { [cardId: string]: ConstructedDiscoverCardData } = {};
+	for (const deck of deckStats) {
+		for (const discoverData of deck.discoverData) {
+			const existingData = discoverDataMap[discoverData.cardId];
+			if (!existingData) {
+				discoverDataMap[discoverData.cardId] = {
+					cardId: discoverData.cardId,
+					discovered: 0,
+					discoveredThenWin: 0,
+				};
+			}
+			discoverDataMap[discoverData.cardId].discovered += discoverData.discovered;
+			discoverDataMap[discoverData.cardId].discoveredThenWin += discoverData.discoveredThenWin;
+		}
+	}
+	const result = Object.values(discoverDataMap);
+	return result;
 };
 
 const isOther = (archetypeName: string): boolean => {

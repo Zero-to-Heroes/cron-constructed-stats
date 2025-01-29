@@ -1,7 +1,8 @@
 import { GameFormat } from '../model';
 
-export const HOURLY_DECK_STATS_GAMES_THRESHOLD = 3;
-export const DAILY_DECK_STATS_GAMES_THRESHOLD = 30;
+// There are fewer games now, so maybe this is ok?
+export const HOURLY_DECK_STATS_GAMES_THRESHOLD = 1; // 3
+export const DAILY_DECK_STATS_GAMES_THRESHOLD = 1; // 30
 export const CORE_CARD_THRESHOLD = 0.9;
 export const DECK_STATS_BUCKET = 'static.zerotoheroes.com';
 export const DECK_STATS_KEY_PREFIX = `api/constructed/stats`;

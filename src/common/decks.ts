@@ -1,8 +1,14 @@
 import { AllCardsService, GameFormat } from '@firestone-hs/reference-data';
 import { baseCardId } from '../hourly/constructed-card-data';
-import { ConstructedCardData, ConstructedMatchupInfo, DeckStat, TimePeriod } from '../model';
+import {
+	ConstructedCardData,
+	ConstructedDiscoverCardData,
+	ConstructedMatchupInfo,
+	DeckStat,
+	TimePeriod,
+} from '../model';
 import { Mutable, round } from '../utils';
-import { mergeCardsData } from './cards';
+import { mergeCardsData, mergeDiscoverData } from './cards';
 import { mergeMatchupInfo } from './matchup';
 
 export const mergeDeckStatsData = (
@@ -19,6 +25,7 @@ export const mergeDeckStatsData = (
 	let currentDecklist: string = null;
 	let currentStat: Mutable<DeckStat> = null;
 	let cardsData: ConstructedCardData[] = [];
+	let discoverData: ConstructedDiscoverCardData[] = [];
 	let matchupInfo: ConstructedMatchupInfo[] = [];
 	let stat: DeckStat = null;
 	let decksProcessed = 0;
@@ -32,6 +39,7 @@ export const mergeDeckStatsData = (
 			if (currentStat !== null) {
 				currentStat.cardsData = mergeCardsData(cardsData, format, allCards);
 				currentStat.matchupInfo = mergeMatchupInfo(matchupInfo, format, allCards);
+				currentStat.discoverData = mergeDiscoverData(discoverData, format, allCards);
 				currentStat.winrate =
 					currentStat.totalGames === 0 ? null : round(currentStat.totalWins / currentStat.totalGames, 4);
 				result.push(currentStat);
@@ -75,6 +83,7 @@ export const mergeDeckStatsData = (
 
 				cardsData = [];
 				matchupInfo = [];
+				discoverData = [];
 				decksProcessed++;
 			}
 			currentStat = {
@@ -90,6 +99,7 @@ export const mergeDeckStatsData = (
 				totalWins: 0,
 				winrate: null,
 				cardsData: null,
+				discoverData: null,
 				matchupInfo: null,
 				archetypeCoreCards: null,
 				cardVariations: null,
@@ -110,10 +120,12 @@ export const mergeDeckStatsData = (
 				: stat.lastUpdate;
 		cardsData.push(...stat.cardsData.map((d) => ({ ...d } as ConstructedCardData)));
 		matchupInfo.push(...stat.matchupInfo.map((m) => ({ ...m } as ConstructedMatchupInfo)));
+		discoverData.push(...(stat.discoverData ?? []).map((d) => ({ ...d } as ConstructedDiscoverCardData)));
 	}
 
 	currentStat.cardsData = mergeCardsData(cardsData, format, allCards);
 	currentStat.matchupInfo = mergeMatchupInfo(matchupInfo, format, allCards);
+	currentStat.discoverData = mergeDiscoverData(discoverData, format, allCards);
 	currentStat.winrate =
 		currentStat.totalGames === 0 ? null : round(currentStat.totalWins / currentStat.totalGames, 4);
 	result.push(currentStat);

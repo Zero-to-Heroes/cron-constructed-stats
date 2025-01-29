@@ -29,7 +29,7 @@ const buildDeckStatsForRankBracket = (
 		.map((decklist) => {
 			let deckRows: readonly ConstructedMatchStatDbRow[] = groupedByDeck[decklist];
 			groupedByDeck[decklist] = null;
-			const { data: cardsData, validRows } = buildCardsDataForDeck(deckRows, allCards);
+			const { data: cardsData, discoverData, validRows } = buildCardsDataForDeck(deckRows, allCards);
 			if (!validRows?.length) {
 				return null;
 			}
@@ -58,6 +58,7 @@ const buildDeckStatsForRankBracket = (
 					totalWins: totalWins,
 					winrate: null,
 					cardsData: cardsData,
+					discoverData: discoverData,
 					matchupInfo: matchupInfo,
 				} as DeckStat;
 				deckRows = null;
@@ -90,6 +91,7 @@ const buildMatchupInfoForDeck = (
 			losses: opponentRows.filter((row) => row.result === 'lost')?.length ?? 0,
 			winrate: totalGames > 0 ? wins / totalGames : null,
 			cardsData: cardsDataWhenFightingClass?.data ?? [],
+			discoverData: cardsDataWhenFightingClass?.discoverData ?? [],
 		};
 		return result;
 	});

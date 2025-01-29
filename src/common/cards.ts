@@ -1,6 +1,6 @@
 import { AllCardsService, GameFormat } from '@firestone-hs/reference-data';
 import { baseCardId } from '../hourly/constructed-card-data';
-import { ConstructedCardData } from '../model';
+import { ConstructedCardData, ConstructedDiscoverCardData } from '../model';
 
 export const mergeCardsData = (
 	inputCardsData: ConstructedCardData[],
@@ -45,21 +45,37 @@ export const mergeCardsData = (
 		result.push(currentCardData);
 	}
 	return result;
-	// const groupedByCardId = groupByFunction((a: ConstructedCardData) => a.cardId)(sortedCardsData);
-	// return Object.values(groupedByCardId).map((group) => mergeCardData(group));
 };
 
-// const mergeCardData = (cardsData: readonly ConstructedCardData[]): ConstructedCardData => {
-// 	const result: ConstructedCardData = {
-// 		cardId: cardsData[0].cardId,
-// 		inStartingDeck: cardsData.map((d) => d.inStartingDeck).reduce((a, b) => a + b, 0),
-// 		wins: cardsData.map((d) => d.wins).reduce((a, b) => a + b, 0),
-// 		drawnBeforeMulligan: cardsData.map((d) => d.drawnBeforeMulligan).reduce((a, b) => a + b, 0),
-// 		keptInMulligan: cardsData.map((d) => d.keptInMulligan).reduce((a, b) => a + b, 0),
-// 		inHandAfterMulligan: cardsData.map((d) => d.inHandAfterMulligan).reduce((a, b) => a + b, 0),
-// 		inHandAfterMulliganThenWin: cardsData.map((d) => d.inHandAfterMulliganThenWin).reduce((a, b) => a + b, 0),
-// 		drawn: cardsData.map((d) => d.drawn).reduce((a, b) => a + b, 0),
-// 		drawnThenWin: cardsData.map((d) => d.drawnThenWin).reduce((a, b) => a + b, 0),
-// 	};
-// 	return result;
-// };
+export const mergeDiscoverData = (
+	inputDiscoverData: ConstructedDiscoverCardData[],
+	format: GameFormat,
+	allCards: AllCardsService,
+): readonly ConstructedDiscoverCardData[] => {
+	const result = [];
+	let currentCardId: string = null;
+	let currentCardData: ConstructedDiscoverCardData = null;
+	let cardData = null;
+	const sortedCardsData = [...inputDiscoverData].sort((a, b) =>
+		baseCardId(a.cardId, format, allCards).localeCompare(baseCardId(b.cardId, format, allCards)),
+	);
+	while ((cardData = sortedCardsData.pop()) != null) {
+		if (currentCardId === null || baseCardId(cardData.cardId, format, allCards) !== currentCardId) {
+			if (currentCardData !== null) {
+				result.push(currentCardData);
+			}
+			currentCardData = {
+				cardId: baseCardId(cardData.cardId, format, allCards),
+				discovered: 0,
+				discoveredThenWin: 0,
+			};
+		}
+		currentCardId = baseCardId(cardData.cardId, format, allCards);
+		currentCardData.discovered += cardData.discovered ?? 0;
+		currentCardData.discoveredThenWin += cardData.discoveredThenWin ?? 0;
+	}
+	if (currentCardData !== null) {
+		result.push(currentCardData);
+	}
+	return result;
+};

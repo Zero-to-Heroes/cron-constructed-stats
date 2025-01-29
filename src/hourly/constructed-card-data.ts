@@ -1,6 +1,6 @@
-import { MatchAnalysis } from '@firestone-hs/assign-constructed-archetype';
 import { AllCardsService, GameFormat, GameFormatString, formatFormatReverse } from '@firestone-hs/reference-data';
-import { ConstructedCardData, ConstructedMatchStatDbRow } from '../model';
+import { MatchAnalysis } from '@firestone-hs/replay-metadata';
+import { ConstructedCardData, ConstructedDiscoverCardData, ConstructedMatchStatDbRow } from '../model';
 import { arraysEqual } from '../utils';
 
 // Archetype cards data probably the same, we just don't have an initial list of cards
@@ -8,9 +8,14 @@ import { arraysEqual } from '../utils';
 export const buildCardsDataForDeck = (
 	rows: readonly ConstructedMatchStatDbRow[],
 	allCards: AllCardsService,
-): { data: readonly ConstructedCardData[]; validRows: readonly ConstructedMatchStatDbRow[] } => {
+): {
+	data: readonly ConstructedCardData[];
+	discoverData: readonly ConstructedDiscoverCardData[];
+	validRows: readonly ConstructedMatchStatDbRow[];
+} => {
 	let allDeckCards: string[] = [];
 	let consolidatedData: ConstructedCardData[] = [];
+	const consolidatedDiscoverData: ConstructedDiscoverCardData[] = [];
 	const validRows: ConstructedMatchStatDbRow[] = [];
 	for (const row of rows) {
 		const matchAnalysis: MatchAnalysis = JSON.parse(row.matchAnalysis);
@@ -53,6 +58,17 @@ export const buildCardsDataForDeck = (
 			consolidatedCardData.drawn += analysis.drawnTurn > 0 ? 1 : 0;
 			consolidatedCardData.drawnThenWin += analysis.drawnTurn > 0 && row.result === 'won' ? 1 : 0;
 		}
+		for (let i = 0; i < (matchAnalysis.cardsDiscovered?.length ?? 0); i++) {
+			const discoveredCard = matchAnalysis.cardsDiscovered[i];
+			const discoveredCardId = baseCardId(discoveredCard.cardId, format, allCards);
+			let discoverStats = consolidatedDiscoverData.find((card) => card.cardId === discoveredCardId);
+			if (!discoverStats) {
+				discoverStats = buildDefaultDiscoverCardData(discoveredCardId, format, allCards);
+				consolidatedDiscoverData.push(discoverStats);
+			}
+			discoverStats.discovered += 1;
+			discoverStats.discoveredThenWin += row.result === 'won' ? 1 : 0;
+		}
 		validRows.push(row);
 	}
 
@@ -66,7 +82,7 @@ export const buildCardsDataForDeck = (
 		);
 	}
 
-	return { data: consolidatedData, validRows: validRows };
+	return { data: consolidatedData, discoverData: consolidatedDiscoverData, validRows: validRows };
 };
 
 export const baseCardId = (cardId: string, format: GameFormat, allCards: AllCardsService): string => {
@@ -85,17 +101,33 @@ const populateRefData = (
 			continue;
 			// throw new Error('Missing card id');
 		}
-		result.push({
-			cardId: baseCardId(card.cardId, format, allCards),
-			inStartingDeck: 0,
-			wins: 0,
-			drawnBeforeMulligan: 0,
-			keptInMulligan: 0,
-			inHandAfterMulligan: 0,
-			inHandAfterMulliganThenWin: 0,
-			drawn: 0,
-			drawnThenWin: 0,
-		});
+		result.push(buildDefaultCardData(card.cardId, format, allCards));
 	}
 	return result;
+};
+
+const buildDefaultCardData = (cardId: string, format: GameFormat, allCards: AllCardsService): ConstructedCardData => {
+	return {
+		cardId: baseCardId(cardId, format, allCards),
+		inStartingDeck: 0,
+		wins: 0,
+		drawnBeforeMulligan: 0,
+		keptInMulligan: 0,
+		inHandAfterMulligan: 0,
+		inHandAfterMulliganThenWin: 0,
+		drawn: 0,
+		drawnThenWin: 0,
+	};
+};
+
+const buildDefaultDiscoverCardData = (
+	cardId: string,
+	format: GameFormat,
+	allCards: AllCardsService,
+): ConstructedDiscoverCardData => {
+	return {
+		cardId: baseCardId(cardId, format, allCards),
+		discovered: 0,
+		discoveredThenWin: 0,
+	};
 };

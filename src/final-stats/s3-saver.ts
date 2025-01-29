@@ -41,6 +41,7 @@ const saveGlobalArchetypeStats = async (
 		.map((d) => {
 			const result: Mutable<ArchetypeStat> = { ...d };
 			delete result.cardsData;
+			delete result.discoverData;
 			delete result.matchupInfo;
 			return result;
 		})
@@ -79,6 +80,7 @@ const saveGlobalDeckStats = async (
 		.map((d) => {
 			const result: Mutable<DeckStat> = { ...d };
 			delete result.cardsData;
+			delete result.discoverData;
 			delete result.matchupInfo;
 			return result;
 		})

@@ -1,6 +1,6 @@
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService, GameFormat } from '@firestone-hs/reference-data';
-import { mergeCardsData } from '../common/cards';
+import { mergeCardsData, mergeDiscoverData } from '../common/cards';
 import { mergeMatchupInfo } from '../common/matchup';
 import { ArchetypeStat, ArchetypeStats, DeckStat, DeckStats } from '../model';
 import { buildCardVariations } from './utils';
@@ -57,6 +57,11 @@ const mergeDeckStatsForDecklist = (
 		format,
 		allCards,
 	);
+	const discoverData = mergeDiscoverData(
+		deckStats.flatMap((d) => d.discoverData),
+		format,
+		allCards,
+	);
 	const result: DeckStat = {
 		lastUpdate: deckStats
 			.map((d) => new Date(d.lastUpdate))
@@ -73,6 +78,7 @@ const mergeDeckStatsForDecklist = (
 		totalWins: totalWins,
 		winrate: totalGames > 0 ? Math.round((totalWins / totalGames) * 100) / 100 : 0,
 		cardsData: cardsData,
+		discoverData: discoverData,
 		cardVariations: buildCardVariations(deckStats[0].decklist, archetypeData.coreCards, allCards),
 		archetypeCoreCards: archetypeData.coreCards,
 		matchupInfo: mergeMatchupInfo(
