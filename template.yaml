@@ -217,7 +217,7 @@ Resources:
             Handler: retrieve/get-constructed-meta-deck-api-gateway.default
             Runtime: nodejs18.x
             Timeout: 15
-            MemorySize: 600
+            MemorySize: 1000
             CodeUri: ./dist/retrieve/get-constructed-meta-deck-api-gateway
             # Layers:
             #     - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension:14"
