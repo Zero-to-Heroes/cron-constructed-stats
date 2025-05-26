@@ -40,12 +40,9 @@ export const buildDeckStatsWithoutArchetypeInfo = async (
 
 	// console.log('memory after sortedData', formatMemoryUsage(process.memoryUsage()));
 	// console.time('merge-data');
-	const result: readonly DeckStat[] = mergeDeckStatsData(
-		deckStats,
-		timePeriod,
-		formatFormatReverse(format),
-		allCards,
-	);
+	let result: readonly DeckStat[] = mergeDeckStatsData(deckStats, timePeriod, formatFormatReverse(format), allCards);
+	// Temp hack to remove brawl decks
+	result = result.filter((c) => c.cardsData?.length > 5);
 	deckStats = null;
 	// console.log('merged deck stats', result.length);
 	// console.timeEnd('merge-data');

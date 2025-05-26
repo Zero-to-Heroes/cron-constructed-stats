@@ -39,6 +39,7 @@ export default async (event, context: Context): Promise<any> => {
 	const endDate = event.endDate;
 	const format: GameFormat = event.format;
 	const rankBracket = event.rankBracket;
+	const playCoin: 'play' | 'coin' | null = event.playCoin;
 
 	console.log('reading rows from s3', format, rankBracket);
 	const allRows: readonly ConstructedMatchStatDbRow[] = await readRowsFromS3(format, startDate, s3);
@@ -121,33 +122,37 @@ const dispatchEvents = async (context: Context, format: GameFormat, startDate: s
 		'bronze-gold',
 		'all',
 	];
+	const playCoins = ['play', 'coin', null];
 	// const allRankBracket: readonly RankBracket[] = ['all'];
 	// for (const timePeriod of allTimePeriod) {
 	for (const rankBracket of allRankBracket) {
-		const newEvent = {
-			dailyProcessing: true,
-			rankBracket: rankBracket,
-			format: format,
-			startDate: startDate,
-			endDate: endDate,
-		};
-		const params = {
-			FunctionName: context.functionName,
-			InvocationType: 'Event',
-			LogType: 'Tail',
-			Payload: JSON.stringify(newEvent),
-		};
-		console.log('\tinvoking lambda', params);
-		const result = await lambda
-			.invoke({
+		for (const playCoin of playCoins) {
+			const newEvent = {
+				dailyProcessing: true,
+				rankBracket: rankBracket,
+				format: format,
+				playCoin: playCoin,
+				startDate: startDate,
+				endDate: endDate,
+			};
+			const params = {
 				FunctionName: context.functionName,
 				InvocationType: 'Event',
 				LogType: 'Tail',
 				Payload: JSON.stringify(newEvent),
-			})
-			.promise();
-		// console.log('\tinvocation result', result);
-		await sleep(50);
+			};
+			console.log('\tinvoking lambda', params);
+			const result = await lambda
+				.invoke({
+					FunctionName: context.functionName,
+					InvocationType: 'Event',
+					LogType: 'Tail',
+					Payload: JSON.stringify(newEvent),
+				})
+				.promise();
+			// console.log('\tinvocation result', result);
+			await sleep(50);
+		}
 	}
 	// }
 };

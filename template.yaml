@@ -78,7 +78,7 @@ Resources:
             Timeout: 800
             CodeUri: ./dist/final-result-by-class/build-aggregated-stats
             MemorySize: 10000 
-            ReservedConcurrentExecutions: 10 # Need to investigate locks. To avoid lock races when inserting data in DB
+            ReservedConcurrentExecutions: 20 # Need to investigate locks. To avoid lock races when inserting data in DB
             VpcConfig:
                 SecurityGroupIds:
                     - sg-eccd2691

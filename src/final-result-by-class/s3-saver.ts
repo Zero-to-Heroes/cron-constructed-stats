@@ -94,6 +94,7 @@ const saveGlobalDeckStats = async (
 			delete result.cardsData;
 			delete result.discoverData;
 			delete result.matchupInfo;
+			delete result.coinPlayInfo;
 			return result;
 		})
 		.filter((d) => d.totalGames >= 50);

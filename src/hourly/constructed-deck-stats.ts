@@ -1,7 +1,14 @@
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService } from '@firestone-hs/reference-data';
 import { allClasses } from '../common/utils';
-import { ConstructedMatchStatDbRow, ConstructedMatchupInfo, DeckStat, GameFormat, RankBracket } from '../model';
+import {
+	ConstructedCoinPlayInfo,
+	ConstructedMatchStatDbRow,
+	ConstructedMatchupInfo,
+	DeckStat,
+	GameFormat,
+	RankBracket,
+} from '../model';
 import { buildCardsDataForDeck } from './constructed-card-data';
 
 export const buildDeckStats = (
@@ -37,6 +44,7 @@ const buildDeckStatsForRankBracket = (
 			const totalGames: number = validRows.length;
 			const totalWins: number = validRows.filter((row) => row.result === 'won').length;
 			const matchupInfo = buildMatchupInfoForDeck(validRows, allCards);
+			const coinPlayInfo = buildCoinPlayInfoForDeck(validRows, allCards);
 			try {
 				const heroCardIds: readonly string[] = [
 					...new Set(validRows.map((row) => row.playerHeroCardId).filter((cardId) => !!cardId?.length)),
@@ -60,7 +68,11 @@ const buildDeckStatsForRankBracket = (
 					cardsData: cardsData,
 					discoverData: discoverData,
 					matchupInfo: matchupInfo,
-				} as DeckStat;
+					coinPlayInfo: coinPlayInfo,
+					archetypeName: undefined,
+					archetypeCoreCards: undefined,
+					cardVariations: undefined,
+				};
 				deckRows = null;
 				return result;
 			} catch (e) {
@@ -82,6 +94,7 @@ const buildMatchupInfoForDeck = (
 	return allClasses.map((opponentClass) => {
 		const opponentRows = groupedByOpponent[opponentClass] ?? [];
 		const cardsDataWhenFightingClass = buildCardsDataForDeck(opponentRows, allCards);
+		const coinPlayData = buildCoinPlayInfoForDeck(opponentRows, allCards);
 		const totalGames = opponentRows.length ?? 0;
 		const wins = opponentRows.filter((row) => row.result === 'won')?.length ?? 0;
 		const result: ConstructedMatchupInfo = {
@@ -92,6 +105,30 @@ const buildMatchupInfoForDeck = (
 			winrate: totalGames > 0 ? wins / totalGames : null,
 			cardsData: cardsDataWhenFightingClass?.data ?? [],
 			discoverData: cardsDataWhenFightingClass?.discoverData ?? [],
+			coinPlayInfo: coinPlayData,
+		};
+		return result;
+	});
+};
+
+const buildCoinPlayInfoForDeck = (
+	rows: readonly ConstructedMatchStatDbRow[],
+	allCards: AllCardsService,
+): readonly ConstructedCoinPlayInfo[] => {
+	const validRows = rows.filter((row) => !!row.coinPlay);
+	const groupedByCoinPlay = groupByFunction((row: ConstructedMatchStatDbRow) => row.coinPlay)(validRows);
+	return ['coin', 'play'].map((coinPlay: 'coin' | 'play') => {
+		const coinPlayRows = groupedByCoinPlay[coinPlay] ?? [];
+		const cardsData = buildCardsDataForDeck(coinPlayRows, allCards);
+		const totalGames = coinPlayRows.length ?? 0;
+		const wins = coinPlayRows.filter((row) => row.result === 'won')?.length ?? 0;
+		const result: ConstructedCoinPlayInfo = {
+			coinPlay: coinPlay,
+			totalGames: totalGames,
+			wins: wins,
+			losses: coinPlayRows.filter((row) => row.result === 'lost')?.length ?? 0,
+			winrate: totalGames > 0 ? wins / totalGames : null,
+			cardsData: cardsData?.data ?? [],
 		};
 		return result;
 	});

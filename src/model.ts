@@ -10,6 +10,7 @@ export interface ConstructedMatchStatDbRow {
 	readonly playerArchetypeId: number;
 	readonly opponentClass: string;
 	readonly result: 'won' | 'lost' | 'tied';
+	readonly coinPlay: 'play' | 'coin' | null;
 	readonly playerDecklist: string;
 	readonly matchAnalysis: string;
 	readonly playerHeroCardId: string;
@@ -52,6 +53,7 @@ export interface DeckStat {
 	readonly cardsData: readonly ConstructedCardData[];
 	readonly discoverData: readonly ConstructedDiscoverCardData[];
 	readonly matchupInfo: readonly ConstructedMatchupInfo[];
+	readonly coinPlayInfo: readonly ConstructedCoinPlayInfo[];
 	// Archetype stuff
 	readonly cardVariations: {
 		readonly added: readonly string[];
@@ -88,6 +90,16 @@ export interface ConstructedMatchupInfo {
 	losses: number;
 	cardsData: readonly ConstructedCardData[];
 	discoverData: readonly ConstructedDiscoverCardData[];
+	coinPlayInfo: readonly ConstructedCoinPlayInfo[];
+	winrate: number;
+}
+
+export interface ConstructedCoinPlayInfo {
+	coinPlay: 'play' | 'coin';
+	totalGames: number;
+	wins: number;
+	losses: number;
+	cardsData: readonly ConstructedCardData[];
 	winrate: number;
 }
 
@@ -104,6 +116,7 @@ export interface ArchetypeStat {
 	readonly cardsData: readonly ConstructedCardData[];
 	readonly discoverData: readonly ConstructedDiscoverCardData[];
 	readonly matchupInfo: readonly ConstructedMatchupInfo[];
+	readonly coinPlayInfo: readonly ConstructedCoinPlayInfo[];
 }
 
 export type RankBracket =

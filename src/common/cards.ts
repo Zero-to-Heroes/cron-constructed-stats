@@ -11,6 +11,13 @@ export const mergeCardsData = (
 	let currentCardId: string = null;
 	let currentCardData: ConstructedCardData = null;
 	let cardData = null;
+	if (inputCardsData.some((c) => !c?.cardId)) {
+		console.warn(
+			'invalid card data',
+			inputCardsData.filter((c) => !c?.cardId),
+			inputCardsData,
+		);
+	}
 	const sortedCardsData = [...inputCardsData].sort((a, b) =>
 		baseCardId(a.cardId, format, allCards).localeCompare(baseCardId(b.cardId, format, allCards)),
 	);

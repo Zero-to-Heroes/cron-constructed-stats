@@ -3,11 +3,13 @@ import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
 import { AllCardsService, GameFormat } from '@firestone-hs/reference-data';
 import { Archetype } from '../archetypes';
 import { mergeCardsData, mergeDiscoverData } from '../common/cards';
+import { mergeCoinPlayInfo } from '../common/coin-play';
 import { CORE_CARD_THRESHOLD } from '../common/config';
 import { allClasses } from '../common/utils';
 import {
 	ArchetypeStat,
 	ConstructedCardData,
+	ConstructedCoinPlayInfo,
 	ConstructedDiscoverCardData,
 	ConstructedMatchupInfo,
 	DeckStat,
@@ -57,6 +59,11 @@ const buildArchetypeStat = (
 		format,
 		allCards,
 	);
+	const coinPlayInfo: readonly ConstructedCoinPlayInfo[] = buildCoinPlayInfoForArchetype(
+		archetypeDecks,
+		format,
+		allCards,
+	);
 	const result: ArchetypeStat = {
 		id: archetype.id,
 		name: archetype.archetype,
@@ -70,6 +77,7 @@ const buildArchetypeStat = (
 		cardsData: cardsData.filter((d) => d.inStartingDeck > totalGames / 1000),
 		discoverData: discoverData,
 		matchupInfo: matchupInfo,
+		coinPlayInfo: coinPlayInfo,
 	};
 	return result;
 };
@@ -127,6 +135,38 @@ const buildMatchupInfoForArchetype = (
 			),
 			discoverData: mergeDiscoverData(
 				infoForClass.flatMap((info) => info.discoverData),
+				format,
+				allCards,
+			),
+			coinPlayInfo: mergeCoinPlayInfo(
+				infoForClass.flatMap((info) => info.coinPlayInfo),
+				format,
+				allCards,
+			),
+		};
+		return result;
+	});
+};
+
+const buildCoinPlayInfoForArchetype = (
+	deckStats: readonly DeckStat[],
+	format: GameFormat,
+	allCards: AllCardsService,
+): readonly ConstructedCoinPlayInfo[] => {
+	return ['coin', 'play'].map((coinPlay: 'coin' | 'play') => {
+		const infoForCoinPlay = deckStats
+			.map((d) => d.coinPlayInfo.find((info) => info.coinPlay === coinPlay))
+			.filter((info) => info);
+		const totalGames = infoForCoinPlay.map((info) => info.totalGames).reduce((a, b) => a + b, 0);
+		const wins = infoForCoinPlay.map((info) => info.wins).reduce((a, b) => a + b, 0);
+		const result: ConstructedCoinPlayInfo = {
+			coinPlay: coinPlay,
+			totalGames: totalGames,
+			wins: wins,
+			losses: infoForCoinPlay.map((info) => info.losses).reduce((a, b) => a + b, 0),
+			winrate: !!totalGames ? wins / totalGames : null,
+			cardsData: mergeCardsData(
+				infoForCoinPlay.flatMap((info) => info.cardsData),
 				format,
 				allCards,
 			),
