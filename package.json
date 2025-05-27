@@ -1,6 +1,6 @@
 {
 	"name": "@firestone-hs/constructed-deck-stats",
-	"version": "0.0.16",
+	"version": "0.0.17",
 	"description": "",
 	"scripts": {
 		"lint": "eslint --color --fix --ext .ts .",
