@@ -15,6 +15,7 @@ import {
 	DeckStat,
 } from '../model';
 import { round } from '../utils';
+import { perf } from './performance-analyzer';
 
 export const buildArchetypeStats = (
 	refArchetypes: readonly Archetype[],
@@ -24,9 +25,12 @@ export const buildArchetypeStats = (
 	debug = false,
 ): readonly ArchetypeStat[] => {
 	// console.time('groupBy');
+	perf.startTimer('archetype-stats-grouping');
 	const groupedByArchetype = groupByFunction((deckStat: DeckStat) => deckStat.archetypeId)(dailyDeckData);
+	perf.endTimer('archetype-stats-grouping');
 	// console.timeEnd('groupBy');
 	// console.debug('building', Object.keys(groupedByArchetype).length, 'archetypes');
+	perf.startTimer('archetype-stats-building');
 	const archetypeStats: readonly ArchetypeStat[] = Object.keys(groupedByArchetype)
 		.map((archetypeId) =>
 			buildArchetypeStat(
@@ -38,6 +42,7 @@ export const buildArchetypeStats = (
 			),
 		)
 		.filter((a) => a.totalGames > 0);
+	perf.endTimer('archetype-stats-building');
 	return archetypeStats;
 };
 

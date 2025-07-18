@@ -1,9 +1,10 @@
-import { AllCardsService, formatFormatReverse } from '@firestone-hs/reference-data';
+import { AllCardsService } from '@firestone-hs/reference-data';
 import { DECK_STATS_BUCKET } from '../common/config';
-import { mergeDeckStatsData } from '../common/decks';
+import { mergeDeckStatsDataOptimized } from '../common/decks-optimized';
 import { ArchetypeStat, DeckStat, DeckStats, GameFormat, RankBracket, TimePeriod } from '../model';
 import { s3 } from './build-aggregated-stats';
 import { getFileKeysToLoad } from './file-keys';
+import { perf } from './performance-analyzer';
 import { buildCardVariations } from './utils';
 
 export const buildDeckStatsWithoutArchetypeInfo = async (
@@ -14,6 +15,8 @@ export const buildDeckStatsWithoutArchetypeInfo = async (
 	patchInfo: any,
 	allCards: AllCardsService,
 ): Promise<readonly DeckStat[]> => {
+	// Time deck stats loading and processing
+	perf.startTimer('deck-stats-loading');
 	const fileKeys = getFileKeysToLoad(format, rankBracket, timePeriod, playerClass, patchInfo);
 	// console.time('raw-data-load');
 	let rawData = await Promise.all(
@@ -35,15 +38,18 @@ export const buildDeckStatsWithoutArchetypeInfo = async (
 		.filter((d) => !!d.decklist)
 		.sort((a, b) => a.decklist.localeCompare(b.decklist));
 	data = null;
+	perf.endTimer('deck-stats-loading');
 	// console.log('loaded deck stats', deckStats.length);
 	// console.timeEnd('deck-sort');
 
 	// console.log('memory after sortedData', formatMemoryUsage(process.memoryUsage()));
 	// console.time('merge-data');
-	let result: readonly DeckStat[] = mergeDeckStatsData(deckStats, timePeriod, formatFormatReverse(format), allCards);
+	perf.startTimer('deck-stats-merge-data');
+	let result: readonly DeckStat[] = mergeDeckStatsDataOptimized(deckStats, timePeriod, format, allCards);
 	// Temp hack to remove brawl decks
 	result = result.filter((c) => c.cardsData?.length > 5);
 	deckStats = null;
+	perf.endTimer('deck-stats-merge-data');
 	// console.log('merged deck stats', result.length);
 	// console.timeEnd('merge-data');
 	return result;

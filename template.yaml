@@ -73,8 +73,8 @@ Resources:
     FinalStatsByClass:
         Type: AWS::Serverless::Function
         Properties:
-            Handler: final-result-by-class/build-aggregated-stats.default
-            Runtime: nodejs18.x
+            Handler: final-result-by-class/build-aggregated-stats-with-timing.default
+            Runtime: nodejs22.x
             Timeout: 800
             CodeUri: ./dist/final-result-by-class/build-aggregated-stats
             MemorySize: 10000 
