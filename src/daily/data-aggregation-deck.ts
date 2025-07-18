@@ -1,6 +1,6 @@
-import { AllCardsService, formatFormatReverse } from '@firestone-hs/reference-data';
+import { AllCardsService } from '@firestone-hs/reference-data';
 import { DECK_STATS_BUCKET } from '../common/config';
-import { mergeDeckStatsData } from '../common/decks';
+import { mergeDeckStatsDataOptimized } from '../common/decks-optimized';
 import { buildFileKeys, buildFileNamesForGivenDay } from '../common/utils';
 import { DeckStat, DeckStats, GameFormat, RankBracket } from '../model';
 import { s3 } from './_build-daily-aggregate';
@@ -27,7 +27,7 @@ export const mergeAllHourlyStatsForTheDay = async (
 		.filter((d) => !!d.decklist)
 		.sort((a, b) => a.decklist.localeCompare(b.decklist));
 	console.debug('loaded', dailyDeckStats.length, 'deck stats for', format, rankBracket, targetDate);
-	const result = mergeDeckStatsData(dailyDeckStats, null, formatFormatReverse(format), allCards);
+	const result = mergeDeckStatsDataOptimized(dailyDeckStats, null, format, allCards);
 	console.debug('aggregated', dailyDeckStats.length, 'into', result.length, 'deck stats');
 	// console.debug('unique decklists', [...new Set(dailyDeckStats.map((stat) => stat.decklist))].length);
 	// console.debug('unique decklists in result', [...new Set(result.map((stat) => stat.decklist))].length);

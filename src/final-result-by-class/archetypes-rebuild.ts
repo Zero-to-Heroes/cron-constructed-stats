@@ -24,13 +24,8 @@ export const buildArchetypeStats = (
 	allCards: AllCardsService,
 	debug = false,
 ): readonly ArchetypeStat[] => {
-	// console.time('groupBy');
-	perf.startTimer('archetype-stats-grouping');
-	const groupedByArchetype = groupByFunction((deckStat: DeckStat) => deckStat.archetypeId)(dailyDeckData);
-	perf.endTimer('archetype-stats-grouping');
-	// console.timeEnd('groupBy');
-	// console.debug('building', Object.keys(groupedByArchetype).length, 'archetypes');
 	perf.startTimer('archetype-stats-building');
+	const groupedByArchetype = groupByFunction((deckStat: DeckStat) => deckStat.archetypeId)(dailyDeckData);
 	const archetypeStats: readonly ArchetypeStat[] = Object.keys(groupedByArchetype)
 		.map((archetypeId) =>
 			buildArchetypeStat(
