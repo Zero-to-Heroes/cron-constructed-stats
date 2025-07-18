@@ -18,40 +18,54 @@ export const buildDeckStatsWithoutArchetypeInfo = async (
 	// Time deck stats loading and processing
 	perf.startTimer('deck-stats-loading');
 	const fileKeys = getFileKeysToLoad(format, rankBracket, timePeriod, playerClass, patchInfo);
-	// console.time('raw-data-load');
-	let rawData = await Promise.all(
-		fileKeys.map((fileKey) => s3.readGzipContent(DECK_STATS_BUCKET, fileKey, 1, false, 300)),
-	);
-	// console.log('loaded file keys', fileKeys);
-	// console.timeEnd('raw-data-load');
 
-	// console.time('raw-data-parse');
-	let data: readonly DeckStats[] = rawData.map((data) => JSON.parse(data));
-	rawData = null;
-	// console.log('loaded data', data.length, data.flatMap((d) => d?.deckStats ?? []).length);
-	// console.timeEnd('raw-data-parse');
+	// Optimize by processing files in batches to reduce memory usage
+	const BATCH_SIZE = 5; // Process 10 files at a time
+	const allDeckStats: DeckStat[] = [];
 
-	// console.time('deck-sort');
-	let deckStats = data
-		?.flatMap((d) => d?.deckStats ?? [])
-		.filter((d) => d.playerClass === playerClass)
-		.filter((d) => !!d.decklist)
-		.sort((a, b) => a.decklist.localeCompare(b.decklist));
-	data = null;
+	// Pre-compile filter functions for better performance
+	const playerClassFilter = (d: DeckStat) => d.playerClass === playerClass;
+	const decklistFilter = (d: DeckStat) => !!d.decklist;
+
+	for (let i = 0; i < fileKeys.length; i += BATCH_SIZE) {
+		const batch = fileKeys.slice(i, i + BATCH_SIZE);
+		console.log(
+			`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(fileKeys.length / BATCH_SIZE)} (${
+				batch.length
+			} files)`,
+		);
+
+		// Load and process batch with parallel processing
+		const rawDataPromises = batch.map(async (fileKey) => {
+			const data = await s3.readGzipContent(DECK_STATS_BUCKET, fileKey, 1, false, 300);
+			// Parse and filter immediately to reduce memory transfer
+			const parsedData = JSON.parse(data) as DeckStats;
+			return parsedData?.deckStats?.filter(playerClassFilter).filter(decklistFilter) ?? [];
+		});
+
+		const batchResults = await Promise.all(rawDataPromises);
+		const batchDeckStats = batchResults.flat();
+
+		allDeckStats.push(...batchDeckStats);
+
+		// Early memory cleanup
+		batchResults.length = 0;
+	}
+
+	console.log(`Loaded ${allDeckStats.length} deck stats from ${fileKeys.length} files`);
+
+	// Sort once after all batches are processed
+	allDeckStats.sort((a, b) => a.decklist.localeCompare(b.decklist));
+
 	perf.endTimer('deck-stats-loading');
-	// console.log('loaded deck stats', deckStats.length);
-	// console.timeEnd('deck-sort');
 
-	// console.log('memory after sortedData', formatMemoryUsage(process.memoryUsage()));
-	// console.time('merge-data');
+	// Process merge optimization
 	perf.startTimer('deck-stats-merge-data');
-	let result: readonly DeckStat[] = mergeDeckStatsDataOptimized(deckStats, timePeriod, format, allCards);
+	let result: readonly DeckStat[] = mergeDeckStatsDataOptimized(allDeckStats, timePeriod, format, allCards);
 	// Temp hack to remove brawl decks
 	result = result.filter((c) => c.cardsData?.length > 5);
-	deckStats = null;
 	perf.endTimer('deck-stats-merge-data');
-	// console.log('merged deck stats', result.length);
-	// console.timeEnd('merge-data');
+
 	return result;
 };
 

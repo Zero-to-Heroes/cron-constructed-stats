@@ -11,6 +11,17 @@ import {
 } from '../model';
 import { Mutable, round } from '../utils';
 
+// Cache for card ID lookups to avoid repeated expensive operations
+const cardIdCache = new Map<string, string>();
+
+const getCachedCardId = (cardId: string, convertedFormat: any, allCards: AllCardsService): string => {
+	const key = `${cardId}-${convertedFormat}`;
+	if (!cardIdCache.has(key)) {
+		cardIdCache.set(key, baseCardId(cardId, convertedFormat, allCards));
+	}
+	return cardIdCache.get(key)!;
+};
+
 export const mergeDeckStatsDataOptimized = (
 	inputData: DeckStat[],
 	timePeriod: TimePeriod,
@@ -28,7 +39,8 @@ export const mergeDeckStatsDataOptimized = (
 	const decklistGroups = new Map<string, DeckStat[]>();
 
 	for (const stat of inputData) {
-		if (stat.cardsData.some((d) => !d?.cardId)) {
+		// Skip invalid stats early
+		if (!stat.cardsData || stat.cardsData.some((d) => !d?.cardId)) {
 			console.warn('invalid card data, ignoring stat altogether', stat.lastUpdate);
 			continue;
 		}
@@ -65,11 +77,11 @@ const mergeStatsForDecklist = (
 	let latestUpdate: Date | null = null;
 	const allHeroCardIds = new Set<string>();
 
-	// Maps for efficient aggregation
-	const cardsDataMap = new Map<string, ConstructedCardData>();
-	const matchupInfoMap = new Map<string, ConstructedMatchupInfo>();
-	const discoverDataMap = new Map<string, ConstructedDiscoverCardData>();
-	const coinPlayInfoMap = new Map<string, ConstructedCoinPlayInfo>();
+	// Use Maps for O(1) operations instead of arrays with find()
+	const cardsDataMap = new Map<string, Mutable<ConstructedCardData>>();
+	const matchupInfoMap = new Map<string, Mutable<ConstructedMatchupInfo>>();
+	const discoverDataMap = new Map<string, Mutable<ConstructedDiscoverCardData>>();
+	const coinPlayInfoMap = new Map<string, Mutable<ConstructedCoinPlayInfo>>();
 
 	// Process each stat in the group
 	for (const stat of groupStats) {
@@ -77,7 +89,7 @@ const mergeStatsForDecklist = (
 		totalGames += stat.totalGames;
 		totalWins += stat.totalWins;
 
-		// Track latest update
+		// Track latest update - avoid creating Date objects unnecessarily
 		if (stat.lastUpdate) {
 			const updateDate = new Date(stat.lastUpdate);
 			if (!latestUpdate || updateDate > latestUpdate) {
@@ -90,9 +102,9 @@ const mergeStatsForDecklist = (
 			stat.heroCardIds.forEach((id) => allHeroCardIds.add(id));
 		}
 
-		// Aggregate cards data
+		// Aggregate cards data with optimized card ID lookup
 		for (const cardData of stat.cardsData) {
-			const cardId = baseCardId(cardData.cardId, convertedFormat, allCards);
+			const cardId = getCachedCardId(cardData.cardId, convertedFormat, allCards);
 			const existing = cardsDataMap.get(cardId);
 
 			if (existing) {
@@ -136,7 +148,7 @@ const mergeStatsForDecklist = (
 				const newCardsData = [...existingCards];
 
 				for (const cardData of matchupData.cardsData) {
-					const cardId = baseCardId(cardData.cardId, convertedFormat, allCards);
+					const cardId = getCachedCardId(cardData.cardId, convertedFormat, allCards);
 					const existingCard = newCardsData.find((c) => c.cardId === cardId);
 					if (existingCard) {
 						existingCard.inStartingDeck += cardData.inStartingDeck;
@@ -149,7 +161,7 @@ const mergeStatsForDecklist = (
 						existingCard.drawnThenWin += cardData.drawnThenWin;
 					} else {
 						newCardsData.push({
-							cardId: baseCardId(cardData.cardId, convertedFormat, allCards),
+							cardId: getCachedCardId(cardData.cardId, convertedFormat, allCards),
 							inStartingDeck: cardData.inStartingDeck,
 							wins: cardData.wins,
 							drawnBeforeMulligan: cardData.drawnBeforeMulligan,
@@ -174,7 +186,7 @@ const mergeStatsForDecklist = (
 					losses: matchupData.losses,
 					winrate: null, // Will be calculated later
 					cardsData: matchupData.cardsData.map((cardData) => ({
-						cardId: baseCardId(cardData.cardId, convertedFormat, allCards),
+						cardId: getCachedCardId(cardData.cardId, convertedFormat, allCards),
 						inStartingDeck: cardData.inStartingDeck,
 						wins: cardData.wins,
 						drawnBeforeMulligan: cardData.drawnBeforeMulligan,
@@ -193,7 +205,7 @@ const mergeStatsForDecklist = (
 		// Aggregate discover data
 		if (stat.discoverData) {
 			for (const discoverData of stat.discoverData) {
-				const cardId = baseCardId(discoverData.cardId, convertedFormat, allCards);
+				const cardId = getCachedCardId(discoverData.cardId, convertedFormat, allCards);
 				const existing = discoverDataMap.get(cardId);
 
 				if (existing) {
@@ -225,7 +237,7 @@ const mergeStatsForDecklist = (
 					const newCardsData = [...existingCards];
 
 					for (const cardData of coinPlayData.cardsData) {
-						const cardId = baseCardId(cardData.cardId, convertedFormat, allCards);
+						const cardId = getCachedCardId(cardData.cardId, convertedFormat, allCards);
 						const existingCard = newCardsData.find((c) => c.cardId === cardId);
 						if (existingCard) {
 							existingCard.inStartingDeck += cardData.inStartingDeck;
@@ -238,7 +250,7 @@ const mergeStatsForDecklist = (
 							existingCard.drawnThenWin += cardData.drawnThenWin;
 						} else {
 							newCardsData.push({
-								cardId: baseCardId(cardData.cardId, convertedFormat, allCards),
+								cardId: getCachedCardId(cardData.cardId, convertedFormat, allCards),
 								inStartingDeck: cardData.inStartingDeck,
 								wins: cardData.wins,
 								drawnBeforeMulligan: cardData.drawnBeforeMulligan,
@@ -262,7 +274,7 @@ const mergeStatsForDecklist = (
 						losses: coinPlayData.losses,
 						winrate: null, // Will be calculated later
 						cardsData: coinPlayData.cardsData.map((cardData) => ({
-							cardId: baseCardId(cardData.cardId, convertedFormat, allCards),
+							cardId: getCachedCardId(cardData.cardId, convertedFormat, allCards),
 							inStartingDeck: cardData.inStartingDeck,
 							wins: cardData.wins,
 							drawnBeforeMulligan: cardData.drawnBeforeMulligan,

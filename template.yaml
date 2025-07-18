@@ -77,7 +77,7 @@ Resources:
             Runtime: nodejs22.x
             Timeout: 800
             CodeUri: ./dist/final-result-by-class/build-aggregated-stats
-            MemorySize: 10000 
+            MemorySize: 4000  
             ReservedConcurrentExecutions: 20 # Need to investigate locks. To avoid lock races when inserting data in DB
             VpcConfig:
                 SecurityGroupIds:
