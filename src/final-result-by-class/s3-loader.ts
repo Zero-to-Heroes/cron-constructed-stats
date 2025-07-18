@@ -2,7 +2,7 @@ import { PatchInfo } from '@firestone-hs/aws-lambda-utils';
 import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../common/config';
 import { buildFileNames, computeHoursBackFromNow } from '../common/utils';
 import { ArchetypeStats, DeckStats, GameFormat, RankBracket, TimePeriod } from '../model';
-import { s3 } from './build-aggregated-stats';
+import { s3 } from './build-aggregated-stats-with-timing';
 
 export const loadHourlyDeckStatFromS3 = async (
 	format: GameFormat,

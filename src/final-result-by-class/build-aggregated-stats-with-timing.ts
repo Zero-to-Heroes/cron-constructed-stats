@@ -1,12 +1,12 @@
 import {
-	S3,
 	getConnectionProxy,
 	getLastConstructedPatch,
 	getLastTwistPatch,
 	logBeforeTimeout,
+	S3,
 	sleep,
 } from '@firestone-hs/aws-lambda-utils';
-import { ALL_CLASSES, AllCardsService, formatFormatReverse } from '@firestone-hs/reference-data';
+import { ALL_CLASSES, AllCardsService, GameFormatString } from '@firestone-hs/reference-data';
 import { Context } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { loadArchetypes } from '../archetypes';
@@ -39,7 +39,7 @@ export default async (event, context: Context): Promise<any> => {
 		return;
 	}
 
-	const format: GameFormat = event.format;
+	const format: GameFormatString = event.format;
 	const timePeriod: TimePeriod = event.timePeriod;
 	const rankBracket: RankBracket = event.rankBracket;
 	const playerClass: string = event.playerClass;
@@ -54,7 +54,7 @@ export default async (event, context: Context): Promise<any> => {
 	}
 
 	const deckStatsWithoutArchetypeInfo: readonly DeckStat[] = await buildDeckStatsWithoutArchetypeInfo(
-		format,
+		format as GameFormat,
 		rankBracket,
 		timePeriod,
 		playerClass,
@@ -83,7 +83,7 @@ export default async (event, context: Context): Promise<any> => {
 	const archetypeStats: readonly ArchetypeStat[] = buildArchetypeStats(
 		archetypes,
 		deckStatsWithoutArchetypeInfo,
-		formatFormatReverse(format),
+		format,
 		allCards,
 	);
 
@@ -99,7 +99,15 @@ export default async (event, context: Context): Promise<any> => {
 	// Time data persistence
 	perf.startTimer('data-persistence');
 	const lastUpdate = getLastUpdate(deckStats);
-	await persistData(archetypeStats, deckStats, lastUpdate, rankBracket, timePeriod, format, playerClass);
+	await persistData(
+		archetypeStats,
+		deckStats,
+		lastUpdate,
+		rankBracket,
+		timePeriod,
+		format as GameFormat,
+		playerClass,
+	);
 	perf.endTimer('data-persistence');
 
 	perf.endTimer('total-execution');

@@ -2,7 +2,7 @@ import { AllCardsService } from '@firestone-hs/reference-data';
 import { DECK_STATS_BUCKET } from '../common/config';
 import { mergeDeckStatsDataOptimized } from '../common/decks-optimized';
 import { ArchetypeStat, DeckStat, DeckStats, GameFormat, RankBracket, TimePeriod } from '../model';
-import { s3 } from './build-aggregated-stats';
+import { s3 } from './build-aggregated-stats-with-timing';
 import { getFileKeysToLoad } from './file-keys';
 import { perf } from './performance-analyzer';
 import { buildCardVariations } from './utils';

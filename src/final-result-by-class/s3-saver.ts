@@ -2,7 +2,7 @@
 import { gzipSync } from 'zlib';
 import { DECK_STATS_BUCKET, DECK_STATS_KEY_PREFIX } from '../common/config';
 import { ArchetypeStat, ArchetypeStats, DeckStat, DeckStats, GameFormat, RankBracket, TimePeriod } from '../model';
-import { s3 } from './build-aggregated-stats';
+import { s3 } from './build-aggregated-stats-with-timing';
 
 export const persistData = async (
 	archetypeStats: readonly ArchetypeStat[],

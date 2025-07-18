@@ -1,6 +1,6 @@
 /* eslint-disable no-extra-boolean-cast */
 import { groupByFunction } from '@firestone-hs/aws-lambda-utils';
-import { AllCardsService, GameFormat } from '@firestone-hs/reference-data';
+import { AllCardsService, GameFormat, GameFormatString } from '@firestone-hs/reference-data';
 import { Archetype } from '../archetypes';
 import { mergeCardsData, mergeDiscoverData } from '../common/cards';
 import { mergeCoinPlayInfo } from '../common/coin-play';
@@ -20,7 +20,7 @@ import { perf } from './performance-analyzer';
 export const buildArchetypeStats = (
 	refArchetypes: readonly Archetype[],
 	dailyDeckData: readonly DeckStat[],
-	format: GameFormat,
+	format: GameFormatString,
 	allCards: AllCardsService,
 	debug = false,
 ): readonly ArchetypeStat[] => {
@@ -31,7 +31,7 @@ export const buildArchetypeStats = (
 			buildArchetypeStat(
 				refArchetypes.find((arch) => arch.id === parseInt(archetypeId)),
 				groupedByArchetype[archetypeId],
-				format,
+				format as unknown as GameFormat,
 				allCards,
 				debug,
 			),
